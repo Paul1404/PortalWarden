@@ -1,0 +1,11 @@
+{
+  "name": "rpi-rfid-door-control",
+  "version": "1.0.0",
+  "description": "Project to control a servo-motor with a RFID-Sensor",
+  "main": "GPIO.js",
+  "scripts": {
+    "dev": "node GPIO.js"
+  },
+  "author": "",
+  "license": "MIT"
+}

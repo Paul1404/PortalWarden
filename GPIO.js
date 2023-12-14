@@ -1,22 +1,61 @@
 const rpio = require('rpio');
 const rc522 = require('node-rc522');
+const sqlite3 = require('sqlite3').verbose();
 
 /**
- * Initialize the RFID-RC522 sensor
+ * Initialize the SQLite database.
+ * Creates a new database named 'rfidTags.db' and a table 'valid_tags' if they don't exist.
+ */
+const db = new sqlite3.Database('rfidTags.db', (err) => {
+    if (err) {
+        console.error(err.message);
+    }
+    console.log('Connected to the RFID tags database.');
+
+    db.run(`CREATE TABLE IF NOT EXISTS valid_tags (
+        id INTEGER PRIMARY KEY,
+        tag TEXT NOT NULL UNIQUE
+    )`, (err) => {
+        if (err) {
+            console.error(err.message);
+        }
+    });
+});
+
+/**
+ * Checks if the RFID tag is valid and controls the servo motor.
+ * @param {string} tagUid - The UID of the RFID tag.
+ */
+function checkAndControl(tagUid) {
+    db.get('SELECT tag FROM valid_tags WHERE tag = ?', [tagUid], (err, row) => {
+        if (err) {
+            console.error(err.message);
+            return;
+        }
+        if (row) {
+            console.log("Valid tag detected:", tagUid);
+            controlServo();
+        } else {
+            console.log("Invalid tag detected:", tagUid);
+        }
+    });
+}
+
+/**
+ * Initializes the RFID-RC522 sensor.
  */
 function initRFID() {
     rc522.init();
 }
 
 /**
- * Read the RFID tag.
- * If a tag is detected, it will activate the servo motor.
+ * Reads the RFID tag.
+ * Calls checkAndControl function with the tag UID.
  */
 function readRFID() {
     rc522.read(function(tagUid){
         if (tagUid) {
-            console.log("Tag detected:", tagUid);
-            controlServo();
+            checkAndControl(tagUid);
         }
     });
 }
@@ -39,6 +78,7 @@ function controlServo() {
 
 /**
  * Main function to start the program.
+ * Initializes the RFID sensor and periodically checks for RFID tags.
  */
 function main() {
     console.log('Program started. Waiting for RFID tag...');
@@ -48,3 +88,15 @@ function main() {
 
 // Start the program
 main();
+
+/**
+ * Closes the database connection when the program is terminated.
+ */
+process.on('SIGINT', () => {
+    db.close((err) => {
+        if (err) {
+            return console.error(err.message);
+        }
+        console.log('Close the database connection.');
+    });
+});
