@@ -1,6 +1,7 @@
 const { exec } = require('child_process');
 const Database = require('./db');
 const { initHardware, controlServoAndLEDs } = require('./hardwareControl');
+const readline = require('readline');
 
 function runPythonScript() {
     const pythonProcess = exec('python3 read_rfid.py', (err, stdout, stderr) => {
@@ -17,6 +18,25 @@ function runPythonScript() {
     });
 }
 
+function setupKeypressListener(db) {
+    readline.emitKeypressEvents(process.stdin);
+    process.stdin.setRawMode(true);
+
+    process.stdin.on('keypress', async (str, key) => {
+        if (key.ctrl && key.name === 'x') {
+            console.log('Ctrl+X pressed. Shutting down...');
+            await gracefulShutdown(db);
+        }
+    });
+}
+
+async function gracefulShutdown(db) {
+    // Perform your shutdown logic here
+    await db.close();
+    console.log('Database connection closed.');
+    process.exit(0);
+}
+
 async function main() {
     const db = new Database();
     initHardware();
@@ -26,11 +46,8 @@ async function main() {
     // Run the Python script
     runPythonScript();
 
-    // Handling SIGINT
-    process.on('SIGINT', async () => {
-        await db.close();
-        process.exit(0);
-    });
+    // Setup keypress listener for Ctrl+X
+    setupKeypressListener(db);
 }
 
 main();
