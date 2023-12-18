@@ -47,6 +47,7 @@ function checkAndControl(tagUid) {
  */
 function initRFID() {
     rc522.init();
+    console.log('RFID sensor initialized.');
 }
 
 /**
@@ -106,7 +107,7 @@ function main() {
 main();
 
 /**
- * Closes the database connection when the program is terminated.
+ * Closes the database connection and stops the program when it is terminated.
  */
 process.on('SIGINT', () => {
     db.close((err) => {
@@ -114,5 +115,6 @@ process.on('SIGINT', () => {
             return console.error(err.message);
         }
         console.log('Close the database connection.');
+        process.exit(0);
     });
 });
