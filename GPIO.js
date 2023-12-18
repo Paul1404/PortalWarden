@@ -34,9 +34,10 @@ function checkAndControl(tagUid) {
         }
         if (row) {
             console.log("Valid tag detected:", tagUid);
-            controlServo();
+            controlServoAndLEDs(true);
         } else {
             console.log("Invalid tag detected:", tagUid);
+            controlServoAndLEDs(false);
         }
     });
 }
@@ -61,12 +62,18 @@ function readRFID() {
 }
 
 /**
- * Controls the servo motor.
+ * Controls the servo motor and LEDs based on RFID value.
  * Activates the servo motor to move to a specified position.
+ * Turns on the green LED if the RFID value is true, otherwise turns on the red LED.
  */
-function controlServo() {
+function controlServoAndLEDs(rfidValue) {
     const servoPin = 12; // Pin where the servo motor is connected
+    const greenLedPin = 3; // Pin where the green LED is connected
+    const redLedPin = 5; // Pin where the red LED is connected
+
     rpio.open(servoPin, rpio.OUTPUT, rpio.LOW);
+    rpio.open(greenLedPin, rpio.OUTPUT, rpio.LOW);
+    rpio.open(redLedPin, rpio.OUTPUT, rpio.LOW);
 
     // Move the servo motor
     const pulseWidth = 1500; // Pulse width in microseconds
@@ -74,6 +81,15 @@ function controlServo() {
     rpio.usleep(pulseWidth);
     rpio.write(servoPin, rpio.LOW);
     rpio.msleep(20); // Wait for 20 milliseconds
+
+    // Control LEDs based on RFID value
+    if (rfidValue) {
+        rpio.write(greenLedPin, rpio.HIGH); // Turn on green LED
+        rpio.write(redLedPin, rpio.LOW); // Turn off red LED
+    } else {
+        rpio.write(greenLedPin, rpio.LOW); // Turn off green LED
+        rpio.write(redLedPin, rpio.HIGH); // Turn on red LED
+    }
 }
 
 /**
