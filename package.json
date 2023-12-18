@@ -4,7 +4,7 @@
   "description": "RFID reader with LED indicators for Raspberry Pi.",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node app.js"
   },
   "dependencies": {
     "onoff": "^6.0.3",
