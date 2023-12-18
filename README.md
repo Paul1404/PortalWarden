@@ -20,37 +20,35 @@ This project consists of a Node.js application and a Python script working toget
 ## Installation
 
 1. **Clone the Repository:**
-    
+
     ```bash
     git clone [repository URL]
     cd [repository name]
     ```
-    
+
 2. **Install Node.js Dependencies:**
-    
+
     ```bash
     npm install
     ```
-    
+
 3. **Set up Python Environment:** Make sure Python 3 is installed. Install required Python packages:
-    
+
     ```bash
     pip3 install RPi.GPIO mfrc522
     ```
-    
 
 ## Usage
 
 * **Starting the Node.js Application:**
-    
+
     ```bash
     node app.js
     ```
-    
+
     This will start the Node.js server and the Python RFID reading script.
-    
+
 * **Reading RFID Tags:** The Python script will automatically read RFID tags and log them to the SQLite database.
-    
 
 ## Hardware Setup
 
