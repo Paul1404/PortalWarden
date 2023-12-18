@@ -22,8 +22,8 @@ This project consists of a Node.js application and a Python script working toget
 1. **Clone the Repository:**
 
     ```bash
-    git clone [repository URL]
-    cd [repository name]
+    git clone https://github.com/Paul1404/RPI-RFID-Door-Control
+    cd RPI-RFID-Door-Control
     ```
 
 2. **Install Node.js Dependencies:**
