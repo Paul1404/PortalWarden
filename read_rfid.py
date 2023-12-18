@@ -1,7 +1,7 @@
 # Description: This script reads the RFID card and writes the id and current timestamp to the SQLite database. File: read_rfid.py
 
-import RPi.GPIO as GPIO
-from mfrc522 import SimpleMFRC522
+import RPi.GPIO as GPIO  # type: ignore
+from mfrc522 import SimpleMFRC522  # type: ignore
 import time
 import logging
 import sqlite3
