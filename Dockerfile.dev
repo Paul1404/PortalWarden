@@ -1,0 +1,26 @@
+# Use the official Node.js 16 image as a base image
+FROM node:latest
+
+# Set the working directory in the Docker container
+WORKDIR /usr/src/app
+
+# Copy the Node.js package files and install dependencies
+COPY package*.json ./
+RUN npm install
+
+# Install Python and the required Python packages
+RUN apt-get update && apt-get install -y python3 python3-pip
+COPY read_rfid.py ./
+RUN pip3 install RPi.GPIO mfrc522
+
+# Copy the remaining source files from your project into the Docker container
+COPY . .
+
+# Grant execution rights to the bash script that enables SPI
+RUN chmod +x enable.spi.sh
+
+# Expose the port that your app will run on
+EXPOSE 3000
+
+# Run the Node.js application
+CMD ["node", "app.js"]
