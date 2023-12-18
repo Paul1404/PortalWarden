@@ -37,6 +37,15 @@ class Database {
         });
     }
 
+    async insertRfidTag(tagUid) {
+        return new Promise((resolve, reject) => {
+            this.db.run("INSERT INTO valid_tags (tag) VALUES (?)", [tagUid], (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+    }
+
     /**
      * Closes the database connection.
      * @returns {Promise<void>} A promise that resolves when the connection is successfully closed.

@@ -5,7 +5,9 @@
   "main": "app.js",
   "scripts": {
     "dev": "node app.js",
-    "detached": "pm2 start app.js --name rpi-rfid-door-control --detach"
+    "detached": "pm2 start app.js --name rpi-rfid-door-control --detach",
+    "insert-rfid": "node app.js"
+
   },
   "dependencies": {
     "onoff": "^6.0.3",

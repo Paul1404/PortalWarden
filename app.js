@@ -77,10 +77,21 @@ async function main() {
     const db = new Database();
     initHardware();
 
-    logger.info('Node.js program started.');
-
-    runPythonScript();
-    setupKeypressListener(db);
+    // Check for command line arguments for RFID ID
+    // Example: npm run insert-rfid -- 123456789
+    const args = process.argv.slice(2); // Skip the first two elements
+    if (args.length > 0) {
+        const rfidId = args[0];
+        try {
+            await db.insertRfidTag(rfidId);
+            logger.info(`RFID ID ${rfidId} inserted into the database.`);
+        } catch (error) {
+            logger.error('Error inserting RFID ID into database:', error);
+        }
+    } else {
+        runPythonScript();
+        setupKeypressListener(db);
+    }
 }
 
 main();
