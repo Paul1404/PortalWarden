@@ -1,12 +1,22 @@
 const rpio = require('rpio');
 const config = require('./config');
 
+/**
+ * Initializes the hardware components by setting the GPIO pins.
+ * This includes setting up the servo motor and LED pins.
+ */
 function initHardware() {
     rpio.open(config.servoPin, rpio.OUTPUT, rpio.LOW);
     rpio.open(config.greenLedPin, rpio.OUTPUT, rpio.LOW);
     rpio.open(config.redLedPin, rpio.OUTPUT, rpio.LOW);
 }
 
+/**
+ * Controls the servo motor and LEDs based on the RFID value.
+ * Moves the servo motor and turns on the green LED if RFID is valid,
+ * otherwise turns on the red LED.
+ * @param {boolean} rfidValue - The value indicating RFID tag validity.
+ */
 function controlServoAndLEDs(rfidValue) {
     // Move the servo motor
     rpio.write(config.servoPin, rpio.HIGH);
