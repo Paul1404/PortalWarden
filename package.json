@@ -1,10 +1,11 @@
 {
-  "name": "rpi-rfid-led",
+  "name": "rpi-rfid-door-control",
   "version": "1.0.0",
   "description": "RFID reader with LED indicators for Raspberry Pi.",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
-    "start": "node app.js"
+    "dev": "node app.js",
+    "detached": "pm2 start app.js --name rpi-rfid-door-control --detach"
   },
   "dependencies": {
     "onoff": "^6.0.3",
