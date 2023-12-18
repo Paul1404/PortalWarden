@@ -1,6 +1,13 @@
 const sqlite3 = require('sqlite3').verbose();
 
+/**
+ * Class representing a database for RFID tags.
+ * Handles the database connection and operations.
+ */
 class Database {
+    /**
+     * Constructs the Database object and establishes a connection to the SQLite database.
+     */
     constructor() {
         this.db = new sqlite3.Database('rfidTags.db', (err) => {
             if (err) console.error(err.message);
@@ -16,6 +23,11 @@ class Database {
         });
     }
 
+    /**
+     * Retrieves a tag from the database based on its UID.
+     * @param {string} tagUid - The UID of the tag to be retrieved.
+     * @returns {Promise<Object>} A promise that resolves with the tag data if found.
+     */
     getTag(tagUid) {
         return new Promise((resolve, reject) => {
             this.db.get('SELECT tag FROM valid_tags WHERE tag = ?', [tagUid], (err, row) => {
@@ -25,6 +37,10 @@ class Database {
         });
     }
 
+    /**
+     * Closes the database connection.
+     * @returns {Promise<void>} A promise that resolves when the connection is successfully closed.
+     */
     close() {
         return new Promise((resolve, reject) => {
             this.db.close(err => {
