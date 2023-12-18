@@ -1,5 +1,5 @@
-import RPi.GPIO as GPIO
-from mfrc522 import SimpleMFRC522
+import RPi.GPIO as GPIO # type: ignore
+from mfrc522 import SimpleMFRC522 # type: ignore
 import time
 import logging
 import sqlite3
