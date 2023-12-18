@@ -31,7 +31,6 @@ function setupKeypressListener(db) {
 }
 
 async function gracefulShutdown(db) {
-    // Perform your shutdown logic here
     await db.close();
     console.log('Database connection closed.');
     process.exit(0);
