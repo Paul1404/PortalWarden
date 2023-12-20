@@ -7,10 +7,11 @@
     "dev": "node app.js",
     "detached": "pm2 start app.js --name rpi-rfid-door-control --detach",
     "insert-rfid": "node app.js"
-
   },
   "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
     "onoff": "^6.0.3",
-    "sqlite3": "^5.0.0"
+    "sqlite3": "^5.1.6"
   }
 }

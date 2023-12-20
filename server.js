@@ -1,9 +1,15 @@
 const express = require('express');
-const Database = require('./db'); // Assuming this is your database module
+const Database = require('./db');
+const cors = require('cors'); // Import CORS module
+const path = require('path');
 const app = express();
 const port = 3000;
 
+app.use(cors()); // Use CORS middleware
 app.use(express.json()); // Middleware to parse JSON bodies
+
+// Serve static files from 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Endpoint to add a new RFID code
 app.post('/add-rfid', async (req, res) => {

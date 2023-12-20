@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RFID Tag Manager</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">RFID Tag Manager</h1>
+
+        <div class="row">
+            <div class="col-md-6">
+                <h2>Add RFID Tag</h2>
+                <input type="text" id="addTagInput" class="form-control mb-2" placeholder="Enter RFID Tag UID">
+                <button onclick="addTag()" class="btn btn-primary">Add Tag</button>
+            </div>
+
+            <div class="col-md-6">
+                <h2>Remove RFID Tag</h2>
+                <input type="text" id="removeTagInput" class="form-control mb-2" placeholder="Enter RFID Tag UID">
+                <button onclick="removeTag()" class="btn btn-danger">Remove Tag</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function addTag() {
+            var tagUid = document.getElementById('addTagInput').value;
+            axios.post('/add-rfid', { tagUid: tagUid })
+                .then(function (response) {
+                    alert('Tag added: ' + tagUid);
+                    document.getElementById('addTagInput').value = ''; // Clear input after adding
+                })
+                .catch(function (error) {
+                    alert('Error adding tag: ' + error);
+                });
+        }
+
+        function removeTag() {
+            var tagUid = document.getElementById('removeTagInput').value;
+            axios.delete('/remove-rfid/' + tagUid)
+                .then(function (response) {
+                    alert('Tag removed: ' + tagUid);
+                    document.getElementById('removeTagInput').value = ''; // Clear input after removing
+                })
+                .catch(function (error) {
+                    alert('Error removing tag: ' + error);
+                });
+        }
+    </script>
+</body>
+</html>
