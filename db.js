@@ -37,11 +37,43 @@ class Database {
         });
     }
 
+    /**
+     * Inserts a new RFID tag into the database.
+     * This method adds a new entry to the 'valid_tags' table with the provided tag UID.
+     * 
+     * @param {string} tagUid - The UID of the RFID tag to be inserted.
+     * @returns {Promise<void>} A promise that resolves when the tag is successfully inserted or rejects with an error.
+     * @example
+     * // To insert a new RFID tag
+     * const db = new Database();
+     * db.insertRfidTag('1234567890')
+     *   .then(() => console.log('Tag inserted successfully'))
+     *   .catch(err => console.error('Error inserting tag:', err));
+     */
     async insertRfidTag(tagUid) {
         return new Promise((resolve, reject) => {
             this.db.run("INSERT INTO valid_tags (tag) VALUES (?)", [tagUid], (err) => {
                 if (err) reject(err);
                 else resolve();
+            });
+        });
+    }
+
+    /**
+     * Removes a tag from the database based on its UID.
+     * @param {string} tagUid - The UID of the tag to be removed.
+     * @returns {Promise<void>} A promise that resolves when the tag is successfully removed.
+     */
+    async removeRfidTag(tagUid) {
+        return new Promise((resolve, reject) => {
+            this.db.run("DELETE FROM valid_tags WHERE tag = ?", [tagUid], (err) => {
+                if (err) {
+                    console.error(`Error removing RFID tag: ${err.message}`);
+                    reject(err);
+                } else {
+                    console.log(`RFID tag ${tagUid} removed successfully.`);
+                    resolve();
+                }
             });
         });
     }
