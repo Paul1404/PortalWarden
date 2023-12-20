@@ -6,22 +6,43 @@
     <title>RFID Tag Manager</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            background-image: url('UI-Background.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 50px;
+        }
+        .custom-header {
+            margin-bottom: 30px;
+            color: #343a40; /* Dark shade for contrast */
+        }
+        .form-control {
+            margin-bottom: 10px; /* Spacing between input and button */
+        }
+    </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1 class="text-center mb-4">RFID Tag Manager</h1>
+    <div class="container">
+        <h1 class="text-center custom-header">RFID Tag Manager</h1>
 
         <div class="row">
-            <div class="col-md-6">
+            <div class="col-md-6 mb-4">
                 <h2>Add RFID Tag</h2>
-                <input type="text" id="addTagInput" class="form-control mb-2" placeholder="Enter RFID Tag UID">
-                <button onclick="addTag()" class="btn btn-primary">Add Tag</button>
+                <input type="text" id="addTagInput" class="form-control" placeholder="Enter RFID Tag UID">
+                <button onclick="addTag()" class="btn btn-primary w-100">Add Tag</button>
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-6 mb-4">
                 <h2>Remove RFID Tag</h2>
-                <input type="text" id="removeTagInput" class="form-control mb-2" placeholder="Enter RFID Tag UID">
-                <button onclick="removeTag()" class="btn btn-danger">Remove Tag</button>
+                <input type="text" id="removeTagInput" class="form-control" placeholder="Enter RFID Tag UID">
+                <button onclick="removeTag()" class="btn btn-danger w-100">Remove Tag</button>
             </div>
         </div>
     </div>
@@ -32,7 +53,7 @@
             axios.post('/add-rfid', { tagUid: tagUid })
                 .then(function (response) {
                     alert('Tag added: ' + tagUid);
-                    document.getElementById('addTagInput').value = ''; // Clear input after adding
+                    document.getElementById('addTagInput').value = ''; 
                 })
                 .catch(function (error) {
                     alert('Error adding tag: ' + error);
@@ -44,7 +65,7 @@
             axios.delete('/remove-rfid/' + tagUid)
                 .then(function (response) {
                     alert('Tag removed: ' + tagUid);
-                    document.getElementById('removeTagInput').value = ''; // Clear input after removing
+                    document.getElementById('removeTagInput').value = '';
                 })
                 .catch(function (error) {
                     alert('Error removing tag: ' + error);
