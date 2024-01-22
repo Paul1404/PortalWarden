@@ -18,9 +18,6 @@ COPY package*.json ./
 # Install Node.js dependencies (production only)
 RUN npm ci --only=production
 
-# Copy the .env file
-COPY .env ./
-
 # Copy the rest of the source files into the image.
 COPY . .
 

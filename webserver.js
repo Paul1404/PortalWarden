@@ -235,15 +235,19 @@ app.delete('/remove-rfid/:tagUid', ensureAuthenticated, async (req, res) => {
  * @param {Database} db - The database connection to close on shutdown.
  */
 function setupKeypressListener(db) {
-  readline.emitKeypressEvents(process.stdin);
-  process.stdin.setRawMode(true);
+  if (process.stdin.isTTY) {
+    readline.emitKeypressEvents(process.stdin);
+    process.stdin.setRawMode(true);
 
-  process.stdin.on('keypress', async (str, key) => {
+    process.stdin.on('keypress', async (str, key) => {
       if (key.ctrl && key.name === 'x') {
         logger.info('Ctrl+X pressed. Initiating shutdown...');
-          await gracefulShutdown(db);
+        await gracefulShutdown(db);
       }
-  });
+    });
+  } else {
+    logger.info('Running in a non-interactive environment. Keypress listener disabled.');
+  }
 }
 
 /**
