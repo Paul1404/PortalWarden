@@ -256,7 +256,6 @@ function setupKeypressListener(db) {
 * @param {Database} db - The database connection to close.
 */
 async function gracefulShutdown(db) {
-  await db.close();
   logger.info('Database connection closed.');
   process.exit(0);
 }

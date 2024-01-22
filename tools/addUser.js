@@ -2,6 +2,9 @@ const Database = require('../db');
 const readline = require('readline');
 const readlineSync = require('readline-sync');
 
+const createLogger = require('../logger');
+const logger = createLogger(__filename);
+
 
 // Create an interface for command line input
 const rl = readline.createInterface({
@@ -15,11 +18,11 @@ async function addUser(username, password) {
 
     try {
         await db.addUser(username, password);
-        console.log(`User ${username} added successfully.`);
+        logger.info(`User ${username} added successfully.`);
     } catch (error) {
-        console.error(`Error adding user: ${error.message}`);
+        logger.error(`Error adding user: ${error.message}`);
     } finally {
-        await db.close();
+        logger.info('Finished!')
     }
 }
 
