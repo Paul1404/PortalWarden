@@ -23,18 +23,23 @@ app.use(cors());
 // Support JSON encoded bodies
 app.use(express.json());
 
+/**
+ * Ensures that the .env file exists and contains a SESSION_SECRET.
+ * If the .env file doesn't exist, it's created. If the SESSION_SECRET
+ * is not set, it's generated using argon2 and appended to the .env file.
+ */
 async function ensureEnvSecret() {
     const envFile = './.env';
-  
+
     // Check if .env file exists, if not, create it
     if (!fs.existsSync(envFile)) {
       console.log('.env file not found, creating...');
       fs.writeFileSync(envFile, '');
     }
-  
+
     // Load the .env file
     dotenv.config();
-  
+
     // Check if SESSION_SECRET is already set
     if (!process.env.SESSION_SECRET) {
       console.log('Generating a new SESSION_SECRET...');
@@ -42,7 +47,7 @@ async function ensureEnvSecret() {
       fs.appendFileSync(envFile, `SESSION_SECRET=${secretKey}\n`);
       process.env.SESSION_SECRET = secretKey; // Set the environment variable
     }
-  }
+}
 
 /**
  * Express session middleware setup.
@@ -51,25 +56,25 @@ app.use(expressSession({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false
-  }));
-  
+}));
 
 /**
  * Passport authentication setup using local strategy.
+ * This strategy involves a basic username and password mechanism.
  */
 passport.use(new LocalStrategy(
     async (username, password, done) => {
       try {
         console.log(`Attempting to authenticate user: ${username}`);
         const user = await db.findUserByUsername(username);
-  
+
         if (!user) {
           console.log('Authentication failed: User not found');
           return done(null, false, { message: 'Incorrect username or password.' });
         }
-  
+
         console.log(`User from DB: ${JSON.stringify(user)}`); // Enhanced logging
-  
+
         const isMatch = await db.verifyUserPassword(username, password);
         if (isMatch) {
           console.log('Authentication successful');
@@ -83,18 +88,26 @@ passport.use(new LocalStrategy(
         return done(error);
       }
     }
-  ));
-  
+));
 
-
+// Initialize Passport authentication middleware
 app.use(passport.initialize());
 app.use(passport.session());
 
+/**
+ * Serializes the user for the session. Stores the user ID in the session.
+ * @param {Object} user - The user object to serialize.
+ * @param {Function} done - The callback function.
+ */
 passport.serializeUser((user, done) => {
     done(null, user.id);  // Store user's ID in the session
-  });
+});
 
-  
+/**
+ * Deserializes the user from the session. Retrieves the user object based on the ID.
+ * @param {number} id - The user ID.
+ * @param {Function} done - The callback function.
+ */
 passport.deserializeUser(async (id, done) => {
   try {
     const user = await db.findUserById(id);
@@ -103,6 +116,9 @@ passport.deserializeUser(async (id, done) => {
     done(error, null);
   }
 });
+
+// [Rest of your Express app code...]
+
 
 /**
  * Route to serve the background image.
