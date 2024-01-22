@@ -13,10 +13,20 @@ class Database {
             if (err) console.error(err.message);
             else console.log('Connected to the RFID tags database.');
 
+            // Create the valid_tags table
             this.db.run(`CREATE TABLE IF NOT EXISTS valid_tags (
                 id INTEGER PRIMARY KEY,
                 tag TEXT NOT NULL UNIQUE,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+            )`, (err) => {
+                if (err) console.error(err.message);
+            });
+
+            // Create the users table
+            this.db.run(`CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL
             )`, (err) => {
                 if (err) console.error(err.message);
             });
@@ -74,6 +84,26 @@ class Database {
                     console.log(`RFID tag ${tagUid} removed successfully.`);
                     resolve();
                 }
+            });
+        });
+    }
+
+    // New method: Find a user by username
+    findUserByUsername(username) {
+        return new Promise((resolve, reject) => {
+            this.db.get('SELECT * FROM users WHERE username = ?', [username], (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+    }
+
+    // New method: Add a new user
+    addUser(username, password) {
+        return new Promise((resolve, reject) => {
+            this.db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, password], (err) => {
+                if (err) reject(err);
+                else resolve();
             });
         });
     }

@@ -1,34 +1,71 @@
 const express = require('express');
-const Database = require('./db');
-const cors = require('cors'); // Import CORS module
+const cors = require('cors');
 const path = require('path');
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const expressSession = require('express-session');
+const Database = require('./db');
+
+
 const app = express();
 const port = 3000;
 
-app.use(cors()); // Use CORS middleware
-app.use(express.json()); // Middleware to parse JSON bodies
+app.use(cors());
+app.use(express.json());
 
-// Serve static files from 'public' directory
-app.use(express.static(path.join(__dirname, 'public')));
+// Express session setup
+app.use(expressSession({
+  secret: 'your_secret_key', // Replace with a real secret key
+  resave: false,
+  saveUninitialized: false
+}));
 
-/**
- * Sets up a keypress listener to handle Ctrl+X for a graceful shutdown.
- * @param {Database} db - The database connection to close on shutdown.
- */
-function setupKeypressListener(db) {
-    readline.emitKeypressEvents(process.stdin);
-    process.stdin.setRawMode(true);
-
-    process.stdin.on('keypress', async (str, key) => {
-        if (key.ctrl && key.name === 'x') {
-            logger.info('Ctrl+X pressed. Initiating shutdown...');
-            await gracefulShutdown(db);
+passport.use(new LocalStrategy(
+    async (username, password, done) => {
+      try {
+        const user = await db.findUserByUsername(username);
+        if (user && user.password === password) {
+            return done(null, user);
         }
-    });
+        return done(null, false, { message: 'Incorrect username or password.' });
+      } catch (error) {
+        return done(error);
+      }
+    }
+  ));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+});
+
+app.post('/login', passport.authenticate('local', {
+    successRedirect: '/',
+    failureRedirect: '/login',
+    failureFlash: false
+}));
+
+app.get('/logout', (req, res) => {
+    req.logout();
+    res.redirect('/login');
+});
+
+function ensureAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    res.redirect('/login');
 }
 
+app.get('/', ensureAuthenticated, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+
 // Endpoint to add a new RFID code
-app.post('/add-rfid', async (req, res) => {
+app.post('/add-rfid', ensureAuthenticated, async (req, res) => {
     const tagUid = req.body.tagUid;
     const db = new Database();
 
@@ -43,7 +80,7 @@ app.post('/add-rfid', async (req, res) => {
 });
 
 // Endpoint to remove an RFID tag
-app.delete('/remove-rfid/:tagUid', async (req, res) => {
+app.delete('/remove-rfid/:tagUid', ensureAuthenticated, async (req, res) => {
     const tagUid = req.params.tagUid;
     const db = new Database();
 
@@ -58,6 +95,5 @@ app.delete('/remove-rfid/:tagUid', async (req, res) => {
 });
 
 app.listen(port, () => {
-    setupKeypressListener(db);
-    console.log(`Server running on port http://localhost:${port}`);
+    console.log(`Server running on http://localhost:${port}`);
 });
