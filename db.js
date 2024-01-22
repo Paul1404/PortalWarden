@@ -1,6 +1,8 @@
 const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcrypt');
 const saltRounds = 10; // Number of salt rounds for bcrypt
+require('dotenv').config();
+const path = require('path');
 
 const createLogger = require('./logger');
 const logger = createLogger(__filename);
@@ -14,11 +16,13 @@ class Database {
      * Constructs the Database object and establishes a connection to the SQLite database.
      */
     constructor() {
-        this.db = new sqlite3.Database('rfidTags.db', (err) => {
+        const dbPath = path.join(__dirname, 'rfidTags.db'); // Path to the database file in the root directory
+        this.maxUsers = process.env.MAX_USERS || 5; // Default to 5 if not set
+        this.db = new sqlite3.Database(dbPath, (err) => {
             if (err) {
-                logger.error(err.message);
+                logger.error(`Error connecting to the database: ${err.message}`);
             } else {
-                logger.info('Connected to the RFID tags database.');
+                logger.info(`Connected to the RFID tags database at ${dbPath}`);
             }
 
             // Create the valid_tags table
@@ -76,11 +80,28 @@ class Database {
      * @returns {Promise<void>} A promise that resolves when the user is successfully added.
      */
     async addUser(username, password) {
+        const userCount = await this.getUserCount();
+        if (userCount >= this.maxUsers) {
+            throw new Error('Maximum number of users reached');
+        }
         const hashedPassword = await bcrypt.hash(password, saltRounds);
         return new Promise((resolve, reject) => {
             this.db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, hashedPassword], (err) => {
                 if (err) reject(err);
                 else resolve();
+            });
+        });
+    }
+
+    /**
+     * Gets the current user count from the database.
+     * @returns {Promise<number>} A promise that resolves with the number of users.
+     */
+    async getUserCount() {
+        return new Promise((resolve, reject) => {
+            this.db.get('SELECT COUNT(*) as count FROM users', (err, row) => {
+                if (err) reject(err);
+                else resolve(row.count);
             });
         });
     }

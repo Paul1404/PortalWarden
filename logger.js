@@ -3,36 +3,40 @@ const path = require('path');
 const fs = require('fs');
 
 function createLogger(modulePath) {
-  const subDir = path.basename(path.dirname(modulePath));
-  const logsDir = path.join(__dirname, 'logs', subDir);
-  if (!fs.existsSync(logsDir)){
-    fs.mkdirSync(logsDir, { recursive: true });
+    // Extract the base name of the script file for subdirectory naming
+    const scriptName = path.basename(modulePath);
+    const subDir = scriptName.replace(path.extname(scriptName), ''); // Remove file extension
+  
+    // Define the logs directory path with subdirectory
+    const logsDir = path.join(__dirname, 'logs', subDir);
+    if (!fs.existsSync(logsDir)){
+      fs.mkdirSync(logsDir, { recursive: true });
+    }
+  
+    // Define formats for console and file logging
+    const consoleFormat = winston.format.combine(
+      winston.format.colorize(),
+      winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+      winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
+    );
+  
+    const fileFormat = winston.format.combine(
+      winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+      winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
+    );
+  
+    // Create and return the logger
+    const logger = winston.createLogger({
+      level: 'info',
+      format: fileFormat,
+      transports: [
+        new winston.transports.Console({ format: consoleFormat }),
+        new winston.transports.File({ filename: path.join(logsDir, 'error.log'), level: 'error' }),
+        new winston.transports.File({ filename: path.join(logsDir, 'combined.log') }),
+      ],
+    });
+  
+    return logger;
   }
-
-  const consoleFormat = winston.format.combine(
-    winston.format.colorize(),
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
-  );
-
-  const fileFormat = winston.format.combine(
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
-  );
-
-  const logger = winston.createLogger({
-    level: 'info',
-    format: fileFormat,
-    transports: [
-      new winston.transports.Console({
-        format: consoleFormat
-      }),
-      new winston.transports.File({ filename: path.join(logsDir, 'error.log'), level: 'error' }),
-      new winston.transports.File({ filename: path.join(logsDir, 'combined.log') }),
-    ],
-  });
-
-  return logger;
-}
 
 module.exports = createLogger;
