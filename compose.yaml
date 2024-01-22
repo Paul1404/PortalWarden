@@ -1,9 +1,37 @@
 version: '3'
+
 services:
+  postgres:
+    image: postgres:latest
+    container_name: rpi-rfid-postgres
+    environment:
+      POSTGRES_DB: rpi-rfid-db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: mypassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - rpi-rfid-network
+
   server:
     image: pauwershell/rpi-rfid-door-control:1.4
+    container_name: rpi-rfid-server
     ports:
       - "3000:3000"
     env_file:
       - .env
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: postgresql://admin:mypassword@postgres:5432/rpi-rfid-db
+    networks:
+      - rpi-rfid-network
 
+volumes:
+  postgres-data:
+
+networks:
+  rpi-rfid-network:
+    driver: bridge
