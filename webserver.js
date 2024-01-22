@@ -111,6 +111,12 @@ app.get('/UI-Background.jpg', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'UI-Background.jpg'));
 });
 
+app.get('/', ensureAuthenticated, (req, res) => {
+  res.sendFile(path.join(__dirname, 'private', 'index.html'));
+});
+
+// Serve static files from the 'public' directory
+app.use(express.static('public'));
 
 /**
  * Route to serve the login page.
