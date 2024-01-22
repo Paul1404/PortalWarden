@@ -1,9 +1,10 @@
-const { exec } = require('child_process');
+const { spawn } = require('child_process');
 const Database = require('./db');
 const { initHardware, controlServoAndLEDs } = require('./hardwareControl');
 const readline = require('readline');
 const winston = require('winston');
 const path = require('path');
+
 
 /**
  * Configure Winston logger for application logging.
@@ -23,14 +24,31 @@ const logger = winston.createLogger({
     ]
 });
 
+// Function to start server.js
+function startServer() {
+    const server = spawn('node', ['server.js']);
+
+    server.stdout.on('data', (data) => {
+        logger.info(`Server: ${data}`);
+    });
+
+    server.stderr.on('data', (data) => {
+        logger.error(`Server Error: ${data}`);
+    });
+
+    server.on('close', (code) => {
+        logger.info(`Server process exited with code ${code}`);
+    });
+}
+
 /**
  * Executes a Python script to read RFID data.
  * Logs the output or error to the Winston logger.
  */
 function runPythonScript() {
-    const pythonProcess = exec('python3 read_rfid.py', (err, stdout, stderr) => {
+    const pythonProcess = exec('python3 spi-connector.py', (err, stdout, stderr) => {
         if (err) {
-            logger.error('Error executing read_rfid.py:', err);
+            logger.error('Error executing spi-connector.py:', err);
             return;
         }
         if (stdout) logger.info(`Python stdout: ${stdout}`);

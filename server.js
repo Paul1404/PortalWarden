@@ -11,6 +11,22 @@ app.use(express.json()); // Middleware to parse JSON bodies
 // Serve static files from 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+/**
+ * Sets up a keypress listener to handle Ctrl+X for a graceful shutdown.
+ * @param {Database} db - The database connection to close on shutdown.
+ */
+function setupKeypressListener(db) {
+    readline.emitKeypressEvents(process.stdin);
+    process.stdin.setRawMode(true);
+
+    process.stdin.on('keypress', async (str, key) => {
+        if (key.ctrl && key.name === 'x') {
+            logger.info('Ctrl+X pressed. Initiating shutdown...');
+            await gracefulShutdown(db);
+        }
+    });
+}
+
 // Endpoint to add a new RFID code
 app.post('/add-rfid', async (req, res) => {
     const tagUid = req.body.tagUid;
@@ -42,5 +58,6 @@ app.delete('/remove-rfid/:tagUid', async (req, res) => {
 });
 
 app.listen(port, () => {
+    setupKeypressListener(db);
     console.log(`Server running on port http://localhost:${port}`);
 });
