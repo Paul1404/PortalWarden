@@ -2,6 +2,9 @@ const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcrypt');
 const saltRounds = 10; // Number of salt rounds for bcrypt
 
+const createLogger = require('./logger');
+const logger = createLogger(__filename);
+
 /**
  * Class representing a database for RFID tags.
  * Handles the database connection and operations.
@@ -13,9 +16,9 @@ class Database {
     constructor() {
         this.db = new sqlite3.Database('rfidTags.db', (err) => {
             if (err) {
-                console.error(err.message);
+                logger.error(err.message);
             } else {
-                console.log('Connected to the RFID tags database.');
+                logger.info('Connected to the RFID tags database.');
             }
 
             // Create the valid_tags table
@@ -24,7 +27,7 @@ class Database {
                 tag TEXT NOT NULL UNIQUE,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )`, (err) => {
-                if (err) console.error(err.message);
+                if (err) logger.error(err.message);
             });
 
             // Create the users table
@@ -33,7 +36,7 @@ class Database {
                 username TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL
             )`, (err) => {
-                if (err) console.error(err.message);
+                if (err) logger.error(err.message);
             });
         });
     }
@@ -133,7 +136,7 @@ class Database {
         return new Promise((resolve, reject) => {
             this.db.get('SELECT * FROM users WHERE id = ?', [id], (err, row) => {
                 if (err) {
-                    console.error(`Error finding user by ID: ${err.message}`);
+                    logger.error(`Error finding user by ID: ${err.message}`);
                     reject(err);
                 } else {
                     resolve(row);
@@ -152,7 +155,7 @@ class Database {
             this.db.close(err => {
                 if (err) reject(err);
                 else {
-                    console.log('Closed the database connection.');
+                    logger.info('Closed the database connection.');
                     resolve();
                 }
             });

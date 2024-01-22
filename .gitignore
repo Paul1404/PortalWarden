@@ -125,6 +125,5 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
-rfidTags.db
-rfidTags.db
-rfidTags.db
+.db
+

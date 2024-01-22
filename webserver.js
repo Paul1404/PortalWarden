@@ -11,9 +11,16 @@ const fs = require('fs');
 const argon2 = require('argon2');
 const envFile = './.env';
 const dotenv = require('dotenv');
+const readline = require('readline');
+
+
 
 const app = express();
 const port = 3000;
+
+const createLogger = require('./logger');
+const logger = createLogger(__filename);
+
 
 app.use(express.urlencoded({ extended: true }));
 
@@ -33,7 +40,7 @@ async function ensureEnvSecret() {
 
     // Check if .env file exists, if not, create it
     if (!fs.existsSync(envFile)) {
-      console.log('.env file not found, creating...');
+      logger.info('.env file not found, creating...');
       fs.writeFileSync(envFile, '');
     }
 
@@ -42,7 +49,7 @@ async function ensureEnvSecret() {
 
     // Check if SESSION_SECRET is already set
     if (!process.env.SESSION_SECRET) {
-      console.log('Generating a new SESSION_SECRET...');
+      logger.info('Generating a new SESSION_SECRET...');
       const secretKey = await argon2.hash('some_random_string', { type: argon2.argon2id });
       fs.appendFileSync(envFile, `SESSION_SECRET=${secretKey}\n`);
       process.env.SESSION_SECRET = secretKey; // Set the environment variable
@@ -65,26 +72,26 @@ app.use(expressSession({
 passport.use(new LocalStrategy(
     async (username, password, done) => {
       try {
-        console.log(`Attempting to authenticate user: ${username}`);
+        logger.info(`Attempting to authenticate user: ${username}`);
         const user = await db.findUserByUsername(username);
 
         if (!user) {
-          console.log('Authentication failed: User not found');
+          logger.info('Authentication failed: User not found');
           return done(null, false, { message: 'Incorrect username or password.' });
         }
 
-        console.log(`User from DB: ${JSON.stringify(user)}`); // Enhanced logging
+        logger.info(`User from DB: ${JSON.stringify(user)}`); // Enhanced logging
 
         const isMatch = await db.verifyUserPassword(username, password);
         if (isMatch) {
-          console.log('Authentication successful');
+          logger.info('Authentication successful');
           return done(null, user);
         } else {
-          console.log('Authentication failed: Incorrect password');
+          logger.info('Authentication failed: Incorrect password');
           return done(null, false, { message: 'Incorrect username or password.' });
         }
       } catch (error) {
-        console.error(`Authentication error: ${error}`);
+        logger.error(`Authentication error: ${error}`);
         return done(error);
       }
     }
@@ -116,8 +123,6 @@ passport.deserializeUser(async (id, done) => {
     done(error, null);
   }
 });
-
-// [Rest of your Express app code...]
 
 
 /**
@@ -157,7 +162,7 @@ app.post('/login', (req, res, next) => {
  * Route to handle logout.
  */
 app.get('/logout', (req, res) => {
-    console.log(`User logged out: ${req.user.username}`);
+    logger.info(`User logged out: ${req.user.username}`);
     req.logout();
     res.redirect('/login');
 });
@@ -166,11 +171,11 @@ app.get('/logout', (req, res) => {
  * Middleware to ensure user is authenticated.
  */
 function ensureAuthenticated(req, res, next) {
-    console.log(`Attempting to access: ${req.originalUrl}`);
+    logger.info(`Attempting to access: ${req.originalUrl}`);
     if (req.isAuthenticated()) {
         return next();
     }
-    console.log('Access denied: User not authenticated');
+    logger.info('Access denied: User not authenticated');
     res.redirect('/login');
 }
 
@@ -189,15 +194,15 @@ app.get('/', ensureAuthenticated, (req, res) => {
  */
 app.post('/add-rfid', ensureAuthenticated, async (req, res) => {
     const tagUid = req.body.tagUid;
-    console.log(`Adding RFID tag: ${tagUid}`);
+    logger.info(`Adding RFID tag: ${tagUid}`);
     const db = new Database();
 
     try {
         await db.insertRfidTag(tagUid);
-        console.log(`RFID tag ${tagUid} added successfully`);
+        logger.info(`RFID tag ${tagUid} added successfully`);
         res.status(200).send(`RFID tag ${tagUid} added successfully.`);
     } catch (error) {
-        console.error(`Error adding RFID tag: ${error.message}`);
+        logger.error(`Error adding RFID tag: ${error.message}`);
         res.status(500).send(`Error adding RFID tag: ${error.message}`);
     } finally {
         db.close();
@@ -210,23 +215,70 @@ app.post('/add-rfid', ensureAuthenticated, async (req, res) => {
  */
 app.delete('/remove-rfid/:tagUid', ensureAuthenticated, async (req, res) => {
     const tagUid = req.params.tagUid;
-    console.log(`Removing RFID tag: ${tagUid}`);
+    logger.info(`Removing RFID tag: ${tagUid}`);
     const db = new Database();
 
     try {
         await db.removeRfidTag(tagUid);
-        console.log(`RFID tag ${tagUid} removed successfully`);
+        logger.info(`RFID tag ${tagUid} removed successfully`);
         res.status(200).send(`RFID tag ${tagUid} removed successfully.`);
     } catch (error) {
-        console.error(`Error removing RFID tag: ${error.message}`);
+        logger.error(`Error removing RFID tag: ${error.message}`);
         res.status(500).send(`Error removing RFID tag: ${error.message}`);
     } finally {
         db.close();
     }
 });
 
+/**
+ * Sets up a keypress listener to handle Ctrl+X for a graceful shutdown.
+ * @param {Database} db - The database connection to close on shutdown.
+ */
+function setupKeypressListener(db) {
+  readline.emitKeypressEvents(process.stdin);
+  process.stdin.setRawMode(true);
 
-app.listen(port, () => {
-    ensureEnvSecret()
-    console.log(`Server running on http://localhost:${port}`);
-});
+  process.stdin.on('keypress', async (str, key) => {
+      if (key.ctrl && key.name === 'x') {
+        logger.info('Ctrl+X pressed. Initiating shutdown...');
+          await gracefulShutdown(db);
+      }
+  });
+}
+
+/**
+* Handles the graceful shutdown of the application.
+* Closes the database connection and exits the process.
+* @param {Database} db - The database connection to close.
+*/
+async function gracefulShutdown(db) {
+  await db.close();
+  logger.info('Database connection closed.');
+  process.exit(0);
+}
+
+
+
+/**
+ * The main function where the application is initialized and started.
+ */
+async function main() {
+  try {
+    // Ensure the environment secret is set up
+    await ensureEnvSecret();
+
+    // Set up the keypress listener for graceful shutdown
+    setupKeypressListener(db);
+
+    // Start the Express server
+    app.listen(port, () => {
+      logger.info(`Server running on http://localhost:${port}`);
+    });
+  } catch (error) {
+    logger.error('Failed to start the application:', error);
+    process.exit(1);
+  }
+}
+
+// Run the main function to start the application
+main();
