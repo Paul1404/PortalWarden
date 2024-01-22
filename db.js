@@ -125,6 +125,25 @@ class Database {
     }
 
     /**
+     * Finds a user by their ID.
+     * @param {number} id - The ID of the user to search for.
+     * @returns {Promise<Object>} A promise that resolves with the user data if found.
+     */
+    findUserById(id) {
+        return new Promise((resolve, reject) => {
+            this.db.get('SELECT * FROM users WHERE id = ?', [id], (err, row) => {
+                if (err) {
+                    console.error(`Error finding user by ID: ${err.message}`);
+                    reject(err);
+                } else {
+                    resolve(row);
+                }
+            });
+        });
+    }
+
+
+    /**
      * Closes the database connection.
      * @returns {Promise<void>} A promise that resolves when the connection is successfully closed.
      */

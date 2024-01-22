@@ -123,7 +123,6 @@ app.get('/login', (req, res) => {
  * Route to handle login using passport authentication.
  */
 app.post('/login', (req, res, next) => {
-    console.log('Login request received:', req.body);
     passport.authenticate('local', {
         successRedirect: '/',
         failureRedirect: '/login',
