@@ -18,15 +18,17 @@ COPY package*.json ./
 # Install Node.js dependencies (production only)
 RUN npm ci --only=production
 
-# Run the application as a non-root user.
-USER node
-
 # Copy the rest of the source files into the image.
 COPY . .
+
+# Change ownership of the working directory to the 'node' user
+RUN chown -R node:node /usr/src/app
+
+# Run the application as a non-root user.
+USER node
 
 # Expose the port that the application listens on.
 EXPOSE 3000
 
 # Run the application.
 CMD ["node", "webserver.js"]
-
