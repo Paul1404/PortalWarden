@@ -26,7 +26,7 @@ const logger = winston.createLogger({
 
 // Function to start server.js
 function startServer() {
-    const server = spawn('node', ['server.js']);
+    const server = spawn('node', ['webserver.js']);
 
     server.stdout.on('data', (data) => {
         logger.info(`Server: ${data}`);
