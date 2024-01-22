@@ -5,95 +5,199 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const expressSession = require('express-session');
 const Database = require('./db');
-
+const db = new Database();
+require('dotenv').config();
+const fs = require('fs');
+const argon2 = require('argon2');
+const envFile = './.env';
+const dotenv = require('dotenv');
 
 const app = express();
 const port = 3000;
 
+app.use(express.urlencoded({ extended: true }));
+
+// Enable Cross-Origin Resource Sharing (CORS)
 app.use(cors());
+
+// Support JSON encoded bodies
 app.use(express.json());
 
-// Express session setup
-app.use(expressSession({
-  secret: 'your_secret_key', // Replace with a real secret key
-  resave: false,
-  saveUninitialized: false
-}));
+async function ensureEnvSecret() {
+    const envFile = './.env';
+  
+    // Check if .env file exists, if not, create it
+    if (!fs.existsSync(envFile)) {
+      console.log('.env file not found, creating...');
+      fs.writeFileSync(envFile, '');
+    }
+  
+    // Load the .env file
+    dotenv.config();
+  
+    // Check if SESSION_SECRET is already set
+    if (!process.env.SESSION_SECRET) {
+      console.log('Generating a new SESSION_SECRET...');
+      const secretKey = await argon2.hash('some_random_string', { type: argon2.argon2id });
+      fs.appendFileSync(envFile, `SESSION_SECRET=${secretKey}\n`);
+      process.env.SESSION_SECRET = secretKey; // Set the environment variable
+    }
+  }
 
+/**
+ * Express session middleware setup.
+ */
+app.use(expressSession({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false
+  }));
+  
+
+/**
+ * Passport authentication setup using local strategy.
+ */
 passport.use(new LocalStrategy(
     async (username, password, done) => {
       try {
+        console.log(`Attempting to authenticate user: ${username}`);
         const user = await db.findUserByUsername(username);
+        console.log(`User from DB: ${JSON.stringify(user)}`); // Enhanced logging
+
         if (user && user.password === password) {
+            console.log('Authentication successful');
             return done(null, user);
         }
+
+        console.log('Authentication failed: Incorrect username or password');
         return done(null, false, { message: 'Incorrect username or password.' });
       } catch (error) {
+        console.error(`Authentication error: ${error}`);
         return done(error);
       }
     }
-  ));
+));
+
 
 app.use(passport.initialize());
 app.use(passport.session());
 
+passport.serializeUser((user, done) => {
+    done(null, user.id);  // Store user's ID in the session
+  });
+
+  
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await db.findUserById(id);
+    done(null, user);  // Retrieves user object based on ID from the session
+  } catch (error) {
+    done(error, null);
+  }
+});
+
+/**
+ * Route to serve the background image.
+ */
+app.get('/UI-Background.jpg', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'UI-Background.jpg'));
+});
+
+
+/**
+ * Route to serve the login page.
+ */
 app.get('/login', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-app.post('/login', passport.authenticate('local', {
-    successRedirect: '/',
-    failureRedirect: '/login',
-    failureFlash: false
-}));
+/**
+ * Route to handle login using passport authentication.
+ */
+app.post('/login', (req, res, next) => {
+    console.log('Login request received:', req.body);
+    passport.authenticate('local', {
+        successRedirect: '/',
+        failureRedirect: '/login',
+        failureFlash: false
+    })(req, res, next);
+});
 
+
+/**
+ * Route to handle logout.
+ */
 app.get('/logout', (req, res) => {
+    console.log(`User logged out: ${req.user.username}`);
     req.logout();
     res.redirect('/login');
 });
 
+/**
+ * Middleware to ensure user is authenticated.
+ */
 function ensureAuthenticated(req, res, next) {
+    console.log(`Attempting to access: ${req.originalUrl}`);
     if (req.isAuthenticated()) {
         return next();
     }
+    console.log('Access denied: User not authenticated');
     res.redirect('/login');
 }
 
+
+/**
+ * Route to serve the main page, requires authentication.
+ */
 app.get('/', ensureAuthenticated, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 
-// Endpoint to add a new RFID code
+/**
+ * Endpoint to add a new RFID code.
+ * @param {string} tagUid - The UID of the RFID tag to add.
+ */
 app.post('/add-rfid', ensureAuthenticated, async (req, res) => {
     const tagUid = req.body.tagUid;
+    console.log(`Adding RFID tag: ${tagUid}`);
     const db = new Database();
 
     try {
         await db.insertRfidTag(tagUid);
+        console.log(`RFID tag ${tagUid} added successfully`);
         res.status(200).send(`RFID tag ${tagUid} added successfully.`);
     } catch (error) {
+        console.error(`Error adding RFID tag: ${error.message}`);
         res.status(500).send(`Error adding RFID tag: ${error.message}`);
     } finally {
         db.close();
     }
 });
 
-// Endpoint to remove an RFID tag
+/**
+ * Endpoint to remove an RFID tag.
+ * @param {string} tagUid - The UID of the RFID tag to remove.
+ */
 app.delete('/remove-rfid/:tagUid', ensureAuthenticated, async (req, res) => {
     const tagUid = req.params.tagUid;
+    console.log(`Removing RFID tag: ${tagUid}`);
     const db = new Database();
 
     try {
         await db.removeRfidTag(tagUid);
+        console.log(`RFID tag ${tagUid} removed successfully`);
         res.status(200).send(`RFID tag ${tagUid} removed successfully.`);
     } catch (error) {
+        console.error(`Error removing RFID tag: ${error.message}`);
         res.status(500).send(`Error removing RFID tag: ${error.message}`);
     } finally {
         db.close();
     }
 });
 
+
 app.listen(port, () => {
+    ensureEnvSecret()
     console.log(`Server running on http://localhost:${port}`);
 });

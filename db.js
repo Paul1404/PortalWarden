@@ -108,6 +108,16 @@ class Database {
         });
     }
 
+    findUserById(id) {
+        return new Promise((resolve, reject) => {
+          this.db.get('SELECT * FROM users WHERE id = ?', [id], (err, row) => {
+            if (err) reject(err);
+            else resolve(row);
+          });
+        });
+      }
+      
+
     /**
      * Closes the database connection.
      * @returns {Promise<void>} A promise that resolves when the connection is successfully closed.
