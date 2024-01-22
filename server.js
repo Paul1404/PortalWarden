@@ -62,21 +62,29 @@ passport.use(new LocalStrategy(
       try {
         console.log(`Attempting to authenticate user: ${username}`);
         const user = await db.findUserByUsername(username);
-        console.log(`User from DB: ${JSON.stringify(user)}`); // Enhanced logging
-
-        if (user && user.password === password) {
-            console.log('Authentication successful');
-            return done(null, user);
+  
+        if (!user) {
+          console.log('Authentication failed: User not found');
+          return done(null, false, { message: 'Incorrect username or password.' });
         }
-
-        console.log('Authentication failed: Incorrect username or password');
-        return done(null, false, { message: 'Incorrect username or password.' });
+  
+        console.log(`User from DB: ${JSON.stringify(user)}`); // Enhanced logging
+  
+        const isMatch = await db.verifyUserPassword(username, password);
+        if (isMatch) {
+          console.log('Authentication successful');
+          return done(null, user);
+        } else {
+          console.log('Authentication failed: Incorrect password');
+          return done(null, false, { message: 'Incorrect username or password.' });
+        }
       } catch (error) {
         console.error(`Authentication error: ${error}`);
         return done(error);
       }
     }
-));
+  ));
+  
 
 
 app.use(passport.initialize());

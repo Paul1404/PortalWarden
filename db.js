@@ -1,4 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
+const bcrypt = require('bcrypt');
+const saltRounds = 10; // Number of salt rounds for bcrypt
 
 /**
  * Class representing a database for RFID tags.
@@ -10,8 +12,11 @@ class Database {
      */
     constructor() {
         this.db = new sqlite3.Database('rfidTags.db', (err) => {
-            if (err) console.error(err.message);
-            else console.log('Connected to the RFID tags database.');
+            if (err) {
+                console.error(err.message);
+            } else {
+                console.log('Connected to the RFID tags database.');
+            }
 
             // Create the valid_tags table
             this.db.run(`CREATE TABLE IF NOT EXISTS valid_tags (
@@ -34,31 +39,9 @@ class Database {
     }
 
     /**
-     * Retrieves a tag from the database based on its UID.
-     * @param {string} tagUid - The UID of the tag to be retrieved.
-     * @returns {Promise<Object>} A promise that resolves with the tag data if found.
-     */
-    getTag(tagUid) {
-        return new Promise((resolve, reject) => {
-            this.db.get('SELECT tag FROM valid_tags WHERE tag = ?', [tagUid], (err, row) => {
-                if (err) reject(err);
-                else resolve(row);
-            });
-        });
-    }
-
-    /**
      * Inserts a new RFID tag into the database.
-     * This method adds a new entry to the 'valid_tags' table with the provided tag UID.
-     * 
      * @param {string} tagUid - The UID of the RFID tag to be inserted.
-     * @returns {Promise<void>} A promise that resolves when the tag is successfully inserted or rejects with an error.
-     * @example
-     * // To insert a new RFID tag
-     * const db = new Database();
-     * db.insertRfidTag('1234567890')
-     *   .then(() => console.log('Tag inserted successfully'))
-     *   .catch(err => console.error('Error inserting tag:', err));
+     * @returns {Promise<void>} A promise that resolves when the tag is successfully inserted.
      */
     async insertRfidTag(tagUid) {
         return new Promise((resolve, reject) => {
@@ -77,18 +60,47 @@ class Database {
     async removeRfidTag(tagUid) {
         return new Promise((resolve, reject) => {
             this.db.run("DELETE FROM valid_tags WHERE tag = ?", [tagUid], (err) => {
-                if (err) {
-                    console.error(`Error removing RFID tag: ${err.message}`);
-                    reject(err);
-                } else {
-                    console.log(`RFID tag ${tagUid} removed successfully.`);
-                    resolve();
-                }
+                if (err) reject(err);
+                else resolve();
             });
         });
     }
 
-    // New method: Find a user by username
+    /**
+     * Adds a new user with a hashed password to the database.
+     * @param {string} username - The username of the user to be added.
+     * @param {string} password - The password of the user to be added.
+     * @returns {Promise<void>} A promise that resolves when the user is successfully added.
+     */
+    async addUser(username, password) {
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
+        return new Promise((resolve, reject) => {
+            this.db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, hashedPassword], (err) => {
+                if (err) reject(err);
+                else resolve();
+            });
+        });
+    }
+
+    /**
+     * Retrieves a tag from the database based on its UID.
+     * @param {string} tagUid - The UID of the tag to be retrieved.
+     * @returns {Promise<Object>} A promise that resolves with the tag data if found.
+     */
+    getTag(tagUid) {
+        return new Promise((resolve, reject) => {
+            this.db.get('SELECT tag FROM valid_tags WHERE tag = ?', [tagUid], (err, row) => {
+                if (err) reject(err);
+                else resolve(row);
+            });
+        });
+    }
+
+    /**
+     * Finds a user by their username.
+     * @param {string} username - The username to search for.
+     * @returns {Promise<Object>} A promise that resolves with the user data if found.
+     */
     findUserByUsername(username) {
         return new Promise((resolve, reject) => {
             this.db.get('SELECT * FROM users WHERE username = ?', [username], (err, row) => {
@@ -98,25 +110,19 @@ class Database {
         });
     }
 
-    // New method: Add a new user
-    addUser(username, password) {
-        return new Promise((resolve, reject) => {
-            this.db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, password], (err) => {
-                if (err) reject(err);
-                else resolve();
-            });
-        });
+    /**
+     * Verifies if the provided password matches the hashed password of the user.
+     * @param {string} username - The username of the user.
+     * @param {string} password - The password to be verified.
+     * @returns {Promise<boolean>} A promise that resolves with true if the password matches, otherwise false.
+     */
+    async verifyUserPassword(username, password) {
+        const user = await this.findUserByUsername(username);
+        if (user) {
+            return bcrypt.compare(password, user.password);
+        }
+        return false;
     }
-
-    findUserById(id) {
-        return new Promise((resolve, reject) => {
-          this.db.get('SELECT * FROM users WHERE id = ?', [id], (err, row) => {
-            if (err) reject(err);
-            else resolve(row);
-          });
-        });
-      }
-      
 
     /**
      * Closes the database connection.
