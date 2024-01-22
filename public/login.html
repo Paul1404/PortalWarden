@@ -27,11 +27,18 @@
         .form-control {
             margin-bottom: 10px; /* Spacing between input and button */
         }
+        .login-image {
+            display: block;
+            margin: 0 auto 20px auto; /* Center the image and add some margin below */
+            max-width: 100px; /* Adjust the size as needed */
+            height: auto; /* Keep the aspect ratio */
+        }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <h2 class="text-center custom-header">Login</h2>
+        <img src="/android-chrome-512x512.png" alt="Login Image" class="login-image">
+        <h2 class="text-center custom-header">RFID-Door-Control-System Login</h2>
         <form action="/login" method="post" autocomplete="on">
             <div class="form-group">
                 <label for="username">Username:</label>
