@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: rpi-rfid-db
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: mypassword
+      POSTGRES_PASSWORD: ChangeMe
     ports:
       - "5432:5432"
     volumes:
@@ -15,7 +15,7 @@ services:
     networks:
       - rpi-rfid-network
 
-  server:
+server:
     image: pauwershell/rpi-rfid-door-control:1.4
     container_name: rpi-rfid-server
     ports:
@@ -25,9 +25,16 @@ services:
     depends_on:
       - postgres
     environment:
-      DATABASE_URL: postgresql://admin:mypassword@postgres:5432/rpi-rfid-db
+      DATABASE_URL: postgresql://admin:ChangeMe@postgres:5432/rpi-rfid-db
     networks:
       - rpi-rfid-network
+    devices:
+      - "/dev/mem:/dev/mem"
+      - "/dev/gpiomem:/dev/gpiomem"
+      - "/dev/spidev0.0:/dev/spidev0.0"
+      - "/dev/spidev0.1:/dev/spidev0.1"
+    privileged: true
+
 
 volumes:
   postgres-data:
