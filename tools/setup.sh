@@ -16,12 +16,6 @@ install_command() {
     fi
 }
 
-# Check if running as root, if not exit
-if [ "$EUID" -ne 0 ]; then
-    echo "Please run as root or use sudo"
-    exit 1
-fi
-
 # Check and install required commands
 install_command argon2 argon2
 install_command awk gawk
@@ -53,13 +47,20 @@ fi # Closing the if-else block
 mv .env ../.env
 echo "Copied .env to the parent directory"
 
+# Run Prisma migrations to set up the database
+echo "Running Prisma migrations to set up the database..."
+cd ..  # Navigate to the directory containing your Prisma schema
+prisma migrate deploy
+
+echo "Database setup complete."
+
 # Ask the user if they want to create a new user
 read -p "Do you want to create a new user? (y/n) " answer
 
 case $answer in
     [Yy]* ) 
         echo "Creating new user..."
-        node addUser.js
+        node ./tools/addUser.js
         ;;
     [Nn]* ) 
         echo "Skipping user creation."
