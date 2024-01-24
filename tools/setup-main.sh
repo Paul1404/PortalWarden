@@ -9,7 +9,7 @@ BASEDIR=$(dirname "$SCRIPT_DIR")
 # Log directory and file setup
 LOGDIR="$BASEDIR/logs/setup"
 mkdir -p "$LOGDIR"
-LOGFILE="$LOGDIR/setup_$(date +%Y%m%d_%H%M%S).log"
+LOGFILE="$LOGDIR/setup-main_$(date +%Y%m%d_%H%M%S).log"
 
 echo "Starting setup script" | tee -a $LOGFILE
 
@@ -27,6 +27,27 @@ install_command() {
         echo "Installing $command..." | tee -a $LOGFILE
         sudo apt-get install -y "$package" | tee -a $LOGFILE
     fi
+}
+
+# Function to read password with asterisk feedback
+read_password() {
+    prompt=$1
+    echo -n "$prompt"
+    stty -echo
+    trap 'stty echo' EXIT
+
+    password=""
+    while IFS= read -p "$prompt" -r -s -n 1 char; do
+        if [[ $char == $'\0' ]]; then
+            break
+        fi
+        password+="$char"
+        echo -n '*'
+    done
+    stty echo
+    trap - EXIT
+    echo
+    echo "$password"
 }
 
 # Check and install required commands
@@ -56,15 +77,20 @@ if grep -q "SESSION_SECRET=" "$ENV_FILE"; then
     sed -i "/SESSION_SECRET=/c\SESSION_SECRET=$RANDOM_STRING" "$ENV_FILE"
     echo "Replaced existing SESSION_SECRET in .env" | tee -a $LOGFILE
 else
-    # Append SESSION_SECRET to .env with a newline, ensuring newline is correctly added
+    # Ensure there's a newline at the end of .env
+    tail -c1 "$ENV_FILE" | read -r _ || echo >> "$ENV_FILE"
+
+    # Then append SESSION_SECRET
     echo "SESSION_SECRET=$RANDOM_STRING" >> "$ENV_FILE"
     echo "Appended SESSION_SECRET to .env" | tee -a $LOGFILE
 fi
 
-# Ask for the PostgreSQL password with asterisk masking
+# Ask for the PostgreSQL password without displaying input
 echo -n "Enter the PostgreSQL password: "
 IFS= read -rs POSTGRES_PASSWORD
+echo
 echo "Setting PostgreSQL password" | tee -a $LOGFILE
+
 
 # Update the .env file with the PostgreSQL password
 if grep -q "POSTGRES_PASSWORD=" "$ENV_FILE"; then
@@ -72,9 +98,13 @@ if grep -q "POSTGRES_PASSWORD=" "$ENV_FILE"; then
     sed -i "/POSTGRES_PASSWORD=/c\POSTGRES_PASSWORD=$POSTGRES_PASSWORD" "$ENV_FILE"
     echo "Updated existing POSTGRES_PASSWORD in .env" | tee -a $LOGFILE
 else
-    # Append POSTGRES_PASSWORD to .env with a newline, ensuring newline is correctly added
-    echo -e "\nPOSTGRES_PASSWORD=$POSTGRES_PASSWORD" >> "$ENV_FILE"
+    # Ensure there's a newline at the end of .env
+    tail -c1 "$ENV_FILE" | read -r _ || echo >> "$ENV_FILE"
+
+    # Then append POSTGRES_PASSWORD
+    echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" >> "$ENV_FILE"
     echo "Appended POSTGRES_PASSWORD to .env" | tee -a $LOGFILE
+
 fi
 
 # Update the DATABASE_URL with the new password
@@ -84,4 +114,26 @@ if grep -q "DATABASE_URL=" "$ENV_FILE"; then
     echo "Updated DATABASE_URL in .env" | tee -a $LOGFILE
 fi
 
+# Navigate to the directory where docker-compose.yml is located
+cd "$BASEDIR"
+
+# Ask the user if they want to start the Docker containers
+echo "Do you want to start the Database-Docker container now? (Recommended) (y/n)" | tee -a $LOGFILE
+read -r start_containers
+
+if [[ "$start_containers" =~ ^[Yy]$ ]]; then
+    # Run Docker Compose to start the containers
+    echo "Starting Docker container with Docker Compose..." | tee -a $LOGFILE
+    docker-compose -p rpi-rfid -f docker/postgres-compose.yml up -d
+    echo "Docker containers started." | tee -a $LOGFILE
+else
+    echo "Docker container not started. You can start them later by running:" | tee -a $LOGFILE
+    echo "docker-compose -p rpi-rfid -f postgres-compose.yml up -d" | tee -a $LOGFILE
+    echo "The compose file is located under the docker directory in the root folder" | tee -a $LOGFILE
+fi
+
+
+
 echo "Setup script completed" | tee -a $LOGFILE
+
+exit

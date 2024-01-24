@@ -1,3 +1,10 @@
+#!/bin/bash
+
+# Log directory and file setup
+LOGDIR="$BASEDIR/logs/setup"
+mkdir -p "$LOGDIR"
+LOGFILE="$LOGDIR/setup-db_$(date +%Y%m%d_%H%M%S).log"
+
 # Run Prisma migrations to set up the database
 echo "Running Prisma migrations to set up the database..." | tee -a $LOGFILE
 cd ..  # Navigate to the directory containing your Prisma schema
