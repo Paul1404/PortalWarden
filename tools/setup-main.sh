@@ -120,12 +120,12 @@ read -r start_containers
 
 if [[ "$start_containers" =~ ^[Yy]$ ]]; then
     log "INFO" "Starting Docker container with Docker Compose"
-    docker-compose -p rpi-rfid -f docker/postgres-compose.yml up -d
+    docker-compose -p rpi-rfid-postgres -f docker/postgres-compose.yml up -d
     log "INFO" "Docker containers started"
 else
     log "INFO" "Docker container not started. Informed user about manual start."
     echo "You can start the container with this command below the compose file is located in the docker directory make sure to point to it when running this command."
-    echo "docker-compose -p rpi-rfid -f postgres-compose.yml up -d"
+    echo "docker-compose -p rpi-rfid-postgres -f postgres-compose.yml up -d"
 fi
 
 log "INFO" "Setup script completed"
