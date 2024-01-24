@@ -204,8 +204,6 @@ app.post('/add-rfid', ensureAuthenticated, async (req, res) => {
     } catch (error) {
         logger.error(`Error adding RFID tag: ${error.message}`);
         res.status(500).send(`Error adding RFID tag: ${error.message}`);
-    } finally {
-        db.close();
     }
 });
 
@@ -225,8 +223,6 @@ app.delete('/remove-rfid/:tagUid', ensureAuthenticated, async (req, res) => {
     } catch (error) {
         logger.error(`Error removing RFID tag: ${error.message}`);
         res.status(500).send(`Error removing RFID tag: ${error.message}`);
-    } finally {
-        db.close();
     }
 });
 

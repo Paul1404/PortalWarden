@@ -128,3 +128,4 @@ dist
 .db
 
 rfidTags.db
+prisma/rfid.db
