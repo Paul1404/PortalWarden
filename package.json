@@ -5,8 +5,9 @@
   "main": "app.js",
   "scripts": {
     "dev": "node app.js",
+    "web": "node webserver.js",
     "detached": "pm2 start app.js --name rpi-rfid-door-control --detach",
-    "insert-rfid": "node app.js"
+    "setup": "npm install && prisma migrate deploy"
   },
   "dependencies": {
     "@prisma/client": "^5.8.1",
