@@ -85,3 +85,7 @@ case $spi_answer in
         echo "Please answer yes (y) or no (n)."
         ;;
 esac
+
+echo "Finished! You can run the webserver with: npm run web"
+
+exit
