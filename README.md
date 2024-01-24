@@ -1,3 +1,5 @@
+![Screenshot of the Login Page of the Application](https://i.imgur.com/JrpYGWg.png))
+
 # RPI-RFID-Door-Control Setup Guide 🚪🔑
 
 Welcome to the RPI-RFID-Door-Control repository! This guide will walk you through the steps needed to get the service up and running on your machine. 🚀
