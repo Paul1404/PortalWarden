@@ -1,81 +1,79 @@
-# RFID Reader and Controller System
+![Screenshot of the Login Page of the Application](https://i.imgur.com/JrpYGWg.png)
 
-## Project Overview
+# RPI-RFID-Door-Control Setup Guide 🚪🔑
 
-This project consists of a Node.js application and a Python script working together to read RFID tags and perform actions based on the tag data. The Python script (`read_rfid.py`) reads RFID tags using an RC522 module and logs the data to an SQLite database. The Node.js application (`app.js`) is responsible for controlling hardware based on the RFID data and managing other system functionalities.
+Welcome to the RPI-RFID-Door-Control repository! This guide will walk you through the steps needed to get the service up and running on your machine. 🚀
 
-## Features
+## Prerequisites 📋
 
-* RFID tag reading with logging to an SQLite database.
-* Hardware control based on RFID tag data.
-* Modular Node.js architecture for easy maintenance and scalability.
+Before you begin, ensure you have the following installed:
+- Node.js and npm (Node Package Manager) 📦
+- Docker and Docker Compose 🐳
 
-## Prerequisites
+## Installation and Setup 🛠️
 
-* Raspberry Pi with Raspbian OS.
-* Node.js and npm installed.
-* Python 3 installed.
-* RC522 RFID Reader module.
+Follow these steps to set up the project:
 
-## Installation
+### 1. Clone the Repository 📂
 
-1. **Clone the Repository:**
+First, clone the repository to your local machine:
 
-    ```bash
-    git clone https://github.com/Paul1404/RPI-RFID-Door-Control
-    cd RPI-RFID-Door-Control
-    ```
+```bash
+git clone https://github.com/Paul1404/RPI-RFID-Door-Control.git
+cd RPI-RFID-Door-Control
+```
 
-2. **Install Node.js Dependencies:**
+### 2. Install Node.js Dependencies 📌
 
-    ```bash
-    npm install
-    ```
+Run the following command to install the necessary Node.js dependencies:
 
-3. **Set up Python Environment:** Make sure Python 3 is installed. Install required Python packages:
+```bash
+npm install
+```
 
-    ```bash
-    pip3 install RPi.GPIO mfrc522
-    ```
+### 3. Install and Configure Docker 🐳
 
-## Usage
+Ensure Docker and Docker Compose are installed on your system. For detailed instructions, refer to the official Docker documentation.
 
-* **Starting the Node.js Application:**
+### 4. Run Setup Scripts 🧰
 
-    ```bash
-    node app.js
-    ```
+Navigate to the `tools` directory and run the main setup script:
 
-    This will start the Node.js server and the Python RFID reading script.
+```bash
+cd tools
+bash setup-main.sh
+```
 
-* **Reading RFID Tags:** The Python script will automatically read RFID tags and log them to the SQLite database.
+Follow the prompts to complete the setup. The script will handle the configuration of environment variables and other necessary setup tasks.
 
-## Hardware Setup
+Next, run the database setup script:
 
-* Connect the RC522 module to the Raspberry Pi according to the standard connection diagram.
-* Connect any additional hardware (like LEDs, servo motors, etc.) as required by `hardwareControl.js`.
+```bash
+bash setup-db.sh
+```
 
-## Configuration
+This script sets up the database using Prisma migrations and allows you to create a new user and configure additional settings.
 
-* Edit `config.js` for hardware-specific configurations like GPIO pin assignments.
+### 5. Start the Service 🌐
 
-## Project Structure
+After completing the setup, start the service by running:
 
-* `app.js`: Main Node.js application.
-* `db.js`: Database management for Node.js.
-* `hardwareControl.js`: Controls hardware like LEDs, servo motors, etc.
-* `config.js`: Configuration file for hardware settings.
-* `read_rfid.py`: Python script for reading RFID tags.
+```bash
+npm run web
+```
 
-## Logging
+## Accessing the Service 🖥️
 
-* Node.js logs are printed to the console.
-* Python script logs are saved in `rfid_reader.log`.
+Once the service is running, it will be accessible via:
 
-## Contributing
+```arduino
+http://<your-ip-address>:3000
+```
 
-Contributions to the project are welcome. Please follow the standard fork, branch, and pull request workflow.
+Replace `<your-ip-address>` with the IP address of the machine where the service is installed.
 
-## License
+## Further Assistance 🆘
 
-This project is licensed under MIT
+If you encounter any issues or have questions, please refer to the detailed documentation or open an issue in the GitHub repository.
+
+Thank you for using RPI-RFID-Door-Control! 🎉
