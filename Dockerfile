@@ -32,3 +32,6 @@ EXPOSE 3000
 
 # Run the application.
 CMD ["node", "webserver.js"]
+
+# Connect to github repo
+LABEL org.opencontainers.image.source https://github.com/OWNER/REPO
