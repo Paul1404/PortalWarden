@@ -52,3 +52,19 @@ fi # Closing the if-else block
 # Move the .env file to the parent directory
 mv .env ../.env
 echo "Copied .env to the parent directory"
+
+# Ask the user if they want to create a new user
+read -p "Do you want to create a new user? (y/n) " answer
+
+case $answer in
+    [Yy]* ) 
+        echo "Creating new user..."
+        node addUser.js
+        ;;
+    [Nn]* ) 
+        echo "Skipping user creation."
+        ;;
+    * ) 
+        echo "Please answer yes or no."
+        ;;
+esac
