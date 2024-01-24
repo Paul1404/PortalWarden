@@ -1,5 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcrypt');
+const argon2 = require('argon2');
 const saltRounds = 10;
 const createLogger = require('./logger');
 const logger = createLogger(__filename);
@@ -14,8 +14,9 @@ class Database {
 
     async insertRfidTag(tagUid) {
         try {
+            const hashedTag = await argon2.hash(tagUid);
             const newTag = await prisma.validTag.create({
-                data: { tag: tagUid }
+                data: { tag: hashedTag }
             });
             return newTag;
         } catch (err) {
@@ -26,9 +27,16 @@ class Database {
 
     async removeRfidTag(tagUid) {
         try {
-            await prisma.validTag.delete({
-                where: { tag: tagUid }
-            });
+            const tags = await prisma.validTag.findMany();
+            const tagToDelete = tags.find(async t => await argon2.verify(t.tag, tagUid));
+
+            if (tagToDelete) {
+                await prisma.validTag.delete({
+                    where: { id: tagToDelete.id } // Assuming 'id' is the primary key of the tag record
+                });
+            } else {
+                throw new Error('RFID tag not found');
+            }
         } catch (err) {
             logger.error(`Error removing RFID tag: ${err.message}`);
             throw err;
@@ -41,7 +49,7 @@ class Database {
             if (userCount >= this.maxUsers) {
                 throw new Error('Maximum number of users reached');
             }
-            const hashedPassword = await bcrypt.hash(password, saltRounds);
+            const hashedPassword = await argon2.hash(password);
             const newUser = await prisma.user.create({
                 data: { username, password: hashedPassword }
             });
@@ -64,9 +72,9 @@ class Database {
 
     async getTag(tagUid) {
         try {
-            const tag = await prisma.validTag.findUnique({
-                where: { tag: tagUid }
-            });
+            const hashedTag = await argon2.hash(tagUid);
+            const tags = await prisma.validTag.findMany();
+            const tag = tags.find(t => argon2.verify(t.tag, hashedTag));
             return tag;
         } catch (err) {
             logger.error(`Error retrieving tag: ${err.message}`);
@@ -89,7 +97,7 @@ class Database {
     async verifyUserPassword(username, password) {
         try {
             const user = await this.findUserByUsername(username);
-            if (user && await bcrypt.compare(password, user.password)) {
+            if (user && await argon2.verify(user.password, password)) {
                 return true;
             }
             return false;
