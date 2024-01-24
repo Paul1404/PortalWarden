@@ -69,3 +69,19 @@ case $answer in
         echo "Please answer yes or no."
         ;;
 esac
+
+# Ask the user if they want to enable SPI
+read -p "Do you want to enable SPI on the Raspberry Pi? (y/n) " spi_answer
+case $spi_answer in
+    [Yy]* ) 
+        echo "Enabling SPI..."
+        ./enable-spi.sh
+        echo "SPI enabled."
+        ;;
+    [Nn]* ) 
+        echo "Skipping SPI enable."
+        ;;
+    * ) 
+        echo "Please answer yes (y) or no (n)."
+        ;;
+esac
