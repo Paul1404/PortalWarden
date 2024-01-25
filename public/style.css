@@ -52,3 +52,27 @@ body {
 .logout-button {
     padding: 15px 40px;
 }
+
+/* Style for table containers */
+.table-container {
+    border: 2px solid #007bff; /* Blue border color */
+    border-radius: 0.75rem; /* Rounded corners */
+    padding: 1rem; /* Space between the border and the table */
+    margin-bottom: 1rem; /* Space below the container */
+    background-color: #f9f9f9; /* Light grey background */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+/* Additional responsive spacing for smaller devices */
+@media (max-width: 768px) {
+    .table-container {
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+}
+
+/* Responsive table styling */
+.table-responsive {
+    overflow-x: auto; /* Allows horizontal scrolling */
+}
+

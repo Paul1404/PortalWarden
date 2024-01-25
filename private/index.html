@@ -10,12 +10,20 @@
     <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.css">
+    
+    <!-- jQuery -->
+    <script type="text/javascript" src="https://code.jquery.com/jquery-3.5.1.js"></script>
+    
+    <!-- DataTables JS -->
+    <script type="text/javascript" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.js"></script>
 </head>
 <body>
 
     <!-- Logout Button -->
     <div class="logout-container">
-        <button onclick="confirmLogout()" class="btn btn-secondary logout-button">Logout</button>
+        <button onclick="confirmLogout()" class="btn btn-danger logout-button">Logout</button>
     </div>
 
 
@@ -23,50 +31,117 @@
         <img src="/android-chrome-512x512.png" alt="Login Image" class="login-image">
         <h1 class="text-center custom-header">RFID Tag Manager</h1>
 
+        <!-- RFID Tag Management Section -->
         <div class="row">
+            <!-- Add RFID Tag Form -->
             <div class="col-md-6 mb-4">
                 <h2>Add RFID Tag</h2>
-                <!-- Add RFID Tag Form -->
                 <form onsubmit="event.preventDefault(); addTag();">
                     <input type="text" id="addTagInput" class="form-control" placeholder="Enter RFID Tag UID" required autocomplete="off">
                     <button type="submit" class="btn btn-primary w-100">Add Tag</button>
                 </form>
             </div>
-        
+
+            <!-- Remove RFID Tag Form -->
             <div class="col-md-6 mb-4">
                 <h2>Remove RFID Tag</h2>
-                <!-- Remove RFID Tag Form -->
                 <form onsubmit="event.preventDefault(); removeTag();">
                     <input type="text" id="removeTagInput" class="form-control" placeholder="Enter RFID Tag UID" required autocomplete="off">
                     <button type="submit" class="btn btn-danger w-100">Remove Tag</button>
                 </form>
             </div>
-        </div>        
-                <!-- Section for User Management -->
-                <div class="row mt-4">
-                    <div class="col-md-6 mb-4">
-                        <h2>Add User</h2>
-                        <!-- Add User Form -->
-                        <form onsubmit="event.preventDefault(); addUser();">
-                            <input type="text" id="addUsername" class="form-control" placeholder="Enter Username" required autocomplete="off">
-                            <input type="password" id="addPassword" class="form-control" placeholder="Enter Password" required autocomplete="new-password">
-                            <button type="submit" class="btn btn-success w-100">Add User</button>
-                        </form>
-                    </div>
-
-                    <div class="col-md-6 mb-4">
-                        <h2>Remove User</h2>
-                        <!-- Remove User Form -->
-                        <form onsubmit="event.preventDefault(); removeUser();">
-                            <input type="text" id="removeUsername" class="form-control" placeholder="Enter Username" required autocomplete="off">
-                            <button type="submit" class="btn btn-warning w-100">Remove User</button>
-                        </form>
-                    </div>
-                </div>
+        </div>
+        
+        <!-- User Management Section -->
+        <div class="row mt-4">
+            <!-- Add User Form -->
+            <div class="col-md-6 mb-4">
+                <h2>Add User</h2>
+                <form onsubmit="event.preventDefault(); addUser();">
+                    <input type="text" id="addUsername" class="form-control" placeholder="Enter Username" required autocomplete="off">
+                    <input type="password" id="addPassword" class="form-control" placeholder="Enter Password" required autocomplete="new-password">
+                    <button type="submit" class="btn btn-success w-100">Add User</button>
+                </form>
             </div>
+
+            <!-- Remove User Form -->
+            <div class="col-md-6 mb-4">
+                <h2>Remove User</h2>
+                <form onsubmit="event.preventDefault(); removeUser();">
+                    <input type="text" id="removeUsername" class="form-control" placeholder="Enter Username" required autocomplete="off">
+                    <button type="submit" class="btn btn-warning w-100">Remove User</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Display Lists Section -->
+        <div class="row">
+        <!-- Users List with Styled Container -->
+        <div class="table-container col-md-6 mb-4">
+            <h2>Users</h2>
+            <div class="table-responsive">
+                <table id="usersTable" class="display" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- User data will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- RFID Tags List with Styled Container -->
+        <div class="table-container col-md-6 mb-4">
+            <h2>RFID Tags</h2>
+            <div class="table-responsive">
+                <table id="rfidTagsTable" class="display" style="width:100%">
+                    <thead>
+                        <tr>
+                            <th>RFID Tag UID</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- RFID tags data will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
+        
+        // Initialize the DataTables after the DOM is fully loaded
+        $(document).ready(function() {
+            // Initialize DataTables
+            $('#usersTable').DataTable({
+                "responsive": true,
+                "lengthChange": false,
+                "autoWidth": false,
+            });
+
+            $('#rfidTagsTable').DataTable({
+                "responsive": true,
+                "lengthChange": false,
+                "autoWidth": false,
+                "columnDefs": [
+                    {
+                        "targets": 0,
+                        "render": function(data, type, row) {
+                            return data.length > 60 ? data.substr(0, 60) + '…' : data;
+                        }
+                    }
+                ]
+            });
+
+            // Fetch data for both tables
+            fetchUsers();
+            fetchRfidTags();
+        });
+
+
         function addTag() {
             var tagUid = document.getElementById('addTagInput').value;
             axios.post('/add-rfid', { tagUid: tagUid })
@@ -121,6 +196,48 @@
         if (confirm("Are you sure you want to logout?")) {
             location.href = '/logout';
         }
+        }
+
+        function fetchUsers() {
+            fetch('/users')
+                .then(response => response.json())
+                .then(users => {
+                    // Clear the table before adding new data
+                    const table = $('#usersTable').DataTable();
+                    table.clear();
+
+                    // Add the fetched users to the DataTable
+                    users.forEach(user => {
+                        table.row.add([
+                            user.username
+                        ]);
+                    });
+
+                    // Draw the table to show the new data
+                    table.draw();
+                })
+                .catch(error => console.error('Error fetching users:', error));
+        }
+
+        function fetchRfidTags() {
+            fetch('/rfid-tags')
+                .then(response => response.json())
+                .then(tags => {
+                    // Clear the table before adding new data
+                    const table = $('#rfidTagsTable').DataTable();
+                    table.clear();
+
+                    // Add the fetched RFID tags to the DataTable
+                    tags.forEach(tag => {
+                        table.row.add([
+                            tag.tag  // Add any additional cells if necessary
+                        ]);
+                    });
+
+                    // Draw the table to show the new data
+                    table.draw();
+                })
+                .catch(error => console.error('Error fetching RFID tags:', error));
         }
         
     </script>

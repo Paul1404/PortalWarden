@@ -232,6 +232,25 @@ app.post('/add-rfid', ensureAuthenticated, async (req, res) => {
   }
 });
 
+app.get('/users', ensureAuthenticated, async (req, res) => {
+  try {
+      const users = await db.getUsers(); // You will need to create this method in your Database class
+      res.json(users);
+  } catch (err) {
+      res.status(500).send(`Error retrieving users: ${err.message}`);
+  }
+});
+
+app.get('/rfid-tags', ensureAuthenticated, async (req, res) => {
+  try {
+      const tags = await db.getRfidTags(); // You will need to create this method in your Database class
+      res.json(tags);
+  } catch (err) {
+      res.status(500).send(`Error retrieving RFID tags: ${err.message}`);
+  }
+});
+
+
 
 app.delete('/remove-rfid/:tagUid', ensureAuthenticated, async (req, res) => {
   const tagUid = req.params.tagUid;

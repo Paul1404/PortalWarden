@@ -145,6 +145,14 @@ class Database {
         }
     }
 
+    async getUsers() {
+        return await prisma.user.findMany();
+    }
+
+    async getRfidTags() {
+        return await prisma.validTag.findMany();
+    }
+
 }
 
 module.exports = Database;
