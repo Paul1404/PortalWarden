@@ -4,7 +4,7 @@
   "description": "RFID reader with LED indicators for Raspberry Pi.",
   "main": "app.js",
   "scripts": {
-    "dev": "node app.js",
+    "web-dev": "nodemon",
     "web": "node webserver.js",
     "detached": "pm2 start app.js --name rpi-rfid-door-control --detach",
     "setup": "npm install && prisma migrate deploy"
@@ -25,6 +25,7 @@
     "winston": "^3.11.0"
   },
   "devDependencies": {
+    "nodemon": "^3.0.3",
     "prisma": "^5.8.1"
   }
 }

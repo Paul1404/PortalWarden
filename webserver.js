@@ -176,10 +176,19 @@ app.post('/login', (req, res, next) => {
  * Route to handle logout.
  */
 app.get('/logout', (req, res) => {
-    logger.info(`User logged out: ${req.user.username}`);
-    req.logout();
-    res.redirect('/login');
+  // Log the username before calling logout
+  const username = req.user ? req.user.username : 'Unknown';
+  logger.info(`User logged out: ${username}`);
+
+  req.logout(function(err) {
+      if (err) { 
+          logger.error('Error during logout:', err);
+          return next(err); 
+      }
+      res.redirect('/login');
+  });
 });
+
 
 /**
  * Middleware to ensure user is authenticated.

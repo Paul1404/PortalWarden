@@ -7,3 +7,5 @@
 ☐ Testing hardware connectivity with rpi
 ☐ Enhance webserver.js
 ☐ Test app.js
+✔ Add logout functionality @done (1/25/2024, 10:57:14 PM)
+✔ Adding express-hot reload @done (1/25/2024, 10:57:15 PM)
