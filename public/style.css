@@ -1,0 +1,45 @@
+body {
+    background-image: url('UI-Background.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    font-family: 'Arial', sans-serif; /* Modern and clean font */
+}
+
+.container {
+    background: rgba(255, 255, 255, 0.9); /* Slightly more transparency */
+    border-radius: 20px; /* More rounded corners */
+    padding: 25px;
+    margin-top: 30px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05); /* Subtle shadow for depth */
+}
+
+.custom-header {
+    margin-bottom: 20px;
+    color: #343a40;
+    text-align: center; /* Centering header text */
+}
+
+.form-control, .btn {
+    margin-bottom: 15px; /* Uniform spacing */
+    border-radius: 5px; /* Slightly rounded edges for form elements and buttons */
+}
+
+.btn {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Subtle shadow for buttons */
+}
+
+.login-image {
+    display: block;
+    margin: 0 auto 20px auto;
+    max-width: 120px; /* Slightly larger image */
+    height: auto;
+}
+
+/* Responsive design adjustments */
+@media (max-width: 768px) {
+    .container {
+        margin-top: 20px;
+        padding: 15px;
+    }
+}

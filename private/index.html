@@ -4,46 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RFID Tag Manager</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    
-    <!-- Favicon links for various sizes -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/5.0.0-alpha1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/style.css">
     <link rel="icon" href="/favicon-16x16.png" sizes="16x16" type="image/png">
     <link rel="icon" href="/favicon-32x32.png" sizes="32x32" type="image/png">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180">
-
-    <!-- Link to web app manifest -->
-    <link rel="manifest" href="/web.webmanifest">
-
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <style>
-        body {
-            background-image: url('UI-Background.jpg');
-            background-size: cover;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-        }
-        .container {
-            background: rgba(255, 255, 255, 0.8);
-            border-radius: 15px;
-            padding: 20px;
-            margin-top: 50px;
-        }
-        .custom-header {
-            margin-bottom: 30px;
-            color: #343a40; /* Dark shade for contrast */
-        }
-        .form-control {
-            margin-bottom: 10px; /* Spacing between input and button */
-        }
-
-        .login-image {
-            display: block;
-            margin: 0 auto 20px auto; /* Center the image and add some margin below */
-            max-width: 100px; /* Adjust the size as needed */
-            height: auto; /* Keep the aspect ratio */
-        }
-        
-    </style>
 </head>
 <body>
     <div class="container">
@@ -53,16 +19,44 @@
         <div class="row">
             <div class="col-md-6 mb-4">
                 <h2>Add RFID Tag</h2>
-                <input type="text" id="addTagInput" class="form-control" placeholder="Enter RFID Tag UID">
-                <button onclick="addTag()" class="btn btn-primary w-100">Add Tag</button>
+                <!-- Add RFID Tag Form -->
+                <form onsubmit="event.preventDefault(); addTag();">
+                    <input type="text" id="addTagInput" class="form-control" placeholder="Enter RFID Tag UID" required autocomplete="off">
+                    <button type="submit" class="btn btn-primary w-100">Add Tag</button>
+                </form>
             </div>
-
+        
             <div class="col-md-6 mb-4">
                 <h2>Remove RFID Tag</h2>
-                <input type="text" id="removeTagInput" class="form-control" placeholder="Enter RFID Tag UID">
-                <button onclick="removeTag()" class="btn btn-danger w-100">Remove Tag</button>
+                <!-- Remove RFID Tag Form -->
+                <form onsubmit="event.preventDefault(); removeTag();">
+                    <input type="text" id="removeTagInput" class="form-control" placeholder="Enter RFID Tag UID" required autocomplete="off">
+                    <button type="submit" class="btn btn-danger w-100">Remove Tag</button>
+                </form>
             </div>
-        </div>
+        </div>        
+                <!-- Section for User Management -->
+                <div class="row mt-4">
+                    <div class="col-md-6 mb-4">
+                        <h2>Add User</h2>
+                        <!-- Add User Form -->
+                        <form onsubmit="event.preventDefault(); addUser();">
+                            <input type="text" id="addUsername" class="form-control" placeholder="Enter Username" required autocomplete="off">
+                            <input type="password" id="addPassword" class="form-control" placeholder="Enter Password" required autocomplete="new-password">
+                            <button type="submit" class="btn btn-success w-100">Add User</button>
+                        </form>
+                    </div>
+
+                    <div class="col-md-6 mb-4">
+                        <h2>Remove User</h2>
+                        <!-- Remove User Form -->
+                        <form onsubmit="event.preventDefault(); removeUser();">
+                            <input type="text" id="removeUsername" class="form-control" placeholder="Enter Username" required autocomplete="off">
+                            <button type="submit" class="btn btn-warning w-100">Remove User</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
     </div>
 
     <script>
@@ -89,6 +83,33 @@
                     alert('Error removing tag: ' + error);
                 });
         }
+
+        function addUser() {
+            var username = document.getElementById('addUsername').value;
+            var password = document.getElementById('addPassword').value;
+            axios.post('/add-user', { username: username, password: password })
+                .then(function (response) {
+                    alert('User added: ' + username);
+                    document.getElementById('addUsername').value = '';
+                    document.getElementById('addPassword').value = '';
+                })
+                .catch(function (error) {
+                    alert('Error adding user: ' + error);
+                });
+        }
+
+        function removeUser() {
+            var username = document.getElementById('removeUsername').value;
+            axios.delete('/remove-user/' + username)
+                .then(function (response) {
+                    alert('User removed: ' + username);
+                    document.getElementById('removeUsername').value = '';
+                })
+                .catch(function (error) {
+                    alert('Error removing user: ' + error);
+                });
+        }
+        
     </script>
 </body>
 </html>

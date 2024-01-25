@@ -1,7 +1,7 @@
 ✔ Hide or obscure rfid code in log output @done (1/25/2024, 9:56:10 PM)
 ✔ migrate config.js to env @done (1/25/2024, 10:00:22 PM)
 ✔ the user must install prisma globally or otherwise fix this issue in the script @done (1/25/2024, 10:04:15 PM)
-☐ Option to add remove users from the web interface
+✔ Option to add remove users from the web interface @done (1/25/2024, 10:34:19 PM)
 ☐ Option to show rfid-code users in the web interface
 ☐ HTTPS for the web interface
 ☐ Testing hardware connectivity with rpi

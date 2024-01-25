@@ -132,6 +132,20 @@ app.get('/UI-Background.jpg', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'UI-Background.jpg'));
 });
 
+/**
+ * Route to serve the css file.
+ */
+app.get('/style.css', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'style.css'));
+});
+
+/**
+ * Route to serve the site.webmanifest.
+ */
+app.get('/site.webmanifest', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'site.webmanifest'));
+});
+
 app.get('/', ensureAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, 'private', 'index.html'));
 });
@@ -228,6 +242,37 @@ app.delete('/remove-rfid/:tagUid', ensureAuthenticated, async (req, res) => {
   } catch (error) {
       logger.error(`Error removing RFID tag: ${error.message}`);
       res.status(500).send(`Error removing RFID tag: ${error.message}`);
+  }
+});
+
+
+// Endpoint to add a new user
+app.post('/add-user', ensureAuthenticated, async (req, res) => {
+  const { username, password } = req.body;
+  logger.info(`Received request to add user: ${username}`);
+
+  try {
+      const newUser = await db.addUser(username, password);
+      logger.info(`User ${username} added successfully.`);
+      res.status(200).send(`User ${username} added successfully.`);
+  } catch (error) {
+      logger.error(`Error adding user ${username}: ${error.message}`);
+      res.status(500).send(`Error adding user: ${error.message}`);
+  }
+});
+
+// Endpoint to remove a user
+app.delete('/remove-user/:username', ensureAuthenticated, async (req, res) => {
+  const { username } = req.params;
+  logger.info(`Received request to remove user: ${username}`);
+
+  try {
+      await db.removeUser(username);
+      logger.info(`User ${username} removed successfully.`);
+      res.status(200).send(`User ${username} removed successfully.`);
+  } catch (error) {
+      logger.error(`Error removing user ${username}: ${error.message}`);
+      res.status(500).send(`Error removing user: ${error.message}`);
   }
 });
 

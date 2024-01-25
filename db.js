@@ -45,14 +45,19 @@ class Database {
 
     async addUser(username, password) {
         try {
-            const userCount = await this.getUserCount();
-            if (userCount >= this.maxUsers) {
-                throw new Error('Maximum number of users reached');
+            const existingUser = await prisma.user.findUnique({
+                where: { username }
+            });
+
+            if (existingUser) {
+                throw new Error('Username already exists');
             }
+
             const hashedPassword = await argon2.hash(password);
             const newUser = await prisma.user.create({
                 data: { username, password: hashedPassword }
             });
+
             return newUser;
         } catch (err) {
             logger.error(`Error adding user: ${err.message}`);
@@ -118,6 +123,28 @@ class Database {
             throw err;
         }
     }
+
+    async removeUser(username) {
+        try {
+            const user = await prisma.user.findUnique({
+                where: { username }
+            });
+
+            if (!user) {
+                throw new Error('User not found');
+            }
+
+            await prisma.user.delete({
+                where: { id: user.id }
+            });
+
+            logger.info(`User ${username} removed successfully`);
+        } catch (err) {
+            logger.error(`Error removing user: ${err.message}`);
+            throw err;
+        }
+    }
+
 }
 
 module.exports = Database;
