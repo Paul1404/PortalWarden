@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Get the directory where the script is located
+SCRIPT_DIR="$(dirname "$(readlink -f "$0")")"
+
+# Set BASEDIR to the parent directory of SCRIPT_DIR
+BASEDIR=$(dirname "$SCRIPT_DIR")
+
 # Logging function
 log() {
     level=$1
@@ -15,8 +21,12 @@ mkdir -p "$LOGDIR"
 LOGFILE="$LOGDIR/setup-db_$(date +%Y%m%d_%H%M%S).log"
 
 log "INFO" "Running Prisma migrations to set up the database..."
-cd ..  # Navigate to the directory containing your Prisma schema
-prisma migrate deploy | tee -a $LOGFILE
+
+# Navigate to the root directory containing your Prisma schema and node_modules
+cd $BASEDIR
+
+# Run Prisma migrate using the local installation
+./node_modules/.bin/prisma migrate deploy | tee -a $LOGFILE
 
 log "INFO" "Database setup complete."
 
