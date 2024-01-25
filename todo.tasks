@@ -1,4 +1,4 @@
-☐ Hide or obscure rfid code in log output
+✔ Hide or obscure rfid code in log output @done (1/25/2024, 9:56:10 PM)
 ☐ Migrate hardware control.js
 ☐ migrate config.js to env
 ☐ the user must install prisma globally or otherwise fix this issue in the script

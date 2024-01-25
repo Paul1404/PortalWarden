@@ -188,42 +188,47 @@ app.get('/', ensureAuthenticated, (req, res) => {
 });
 
 
-/**
- * Endpoint to add a new RFID code.
- * @param {string} tagUid - The UID of the RFID tag to add.
- */
 app.post('/add-rfid', ensureAuthenticated, async (req, res) => {
-    const tagUid = req.body.tagUid;
-    logger.info(`Adding RFID tag: ${tagUid}`);
-    const db = new Database();
+  const tagUid = req.body.tagUid;
 
-    try {
-        await db.insertRfidTag(tagUid);
-        logger.info(`RFID tag ${tagUid} added successfully`);
-        res.status(200).send(`RFID tag ${tagUid} added successfully.`);
-    } catch (error) {
-        logger.error(`Error adding RFID tag: ${error.message}`);
-        res.status(500).send(`Error adding RFID tag: ${error.message}`);
-    }
+  // Log a generic message without the actual tag UID
+  logger.info(`Adding a new RFID tag.`);
+  
+  const db = new Database();
+
+  try {
+      await db.insertRfidTag(tagUid);
+
+      // Log a success message without revealing the tag UID
+      logger.info(`RFID tag added successfully`);
+
+      res.status(200).send(`RFID tag added successfully.`);
+  } catch (error) {
+      logger.error(`Error adding RFID tag: ${error.message}`);
+      res.status(500).send(`Error adding RFID tag: ${error.message}`);
+  }
 });
 
-/**
- * Endpoint to remove an RFID tag.
- * @param {string} tagUid - The UID of the RFID tag to remove.
- */
-app.delete('/remove-rfid/:tagUid', ensureAuthenticated, async (req, res) => {
-    const tagUid = req.params.tagUid;
-    logger.info(`Removing RFID tag: ${tagUid}`);
-    const db = new Database();
 
-    try {
-        await db.removeRfidTag(tagUid);
-        logger.info(`RFID tag ${tagUid} removed successfully`);
-        res.status(200).send(`RFID tag ${tagUid} removed successfully.`);
-    } catch (error) {
-        logger.error(`Error removing RFID tag: ${error.message}`);
-        res.status(500).send(`Error removing RFID tag: ${error.message}`);
-    }
+app.delete('/remove-rfid/:tagUid', ensureAuthenticated, async (req, res) => {
+  const tagUid = req.params.tagUid;
+
+  // Log a generic message without the actual tag UID
+  logger.info(`Initiating removal of an RFID tag.`);
+  
+  const db = new Database();
+
+  try {
+      await db.removeRfidTag(tagUid);
+
+      // Log a success message without revealing the tag UID
+      logger.info(`RFID tag removed successfully`);
+
+      res.status(200).send(`RFID tag removed successfully.`);
+  } catch (error) {
+      logger.error(`Error removing RFID tag: ${error.message}`);
+      res.status(500).send(`Error removing RFID tag: ${error.message}`);
+  }
 });
 
 /**
