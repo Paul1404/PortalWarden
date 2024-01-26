@@ -213,25 +213,20 @@ app.get('/', ensureAuthenticated, (req, res) => {
 
 app.post('/add-rfid', ensureAuthenticated, async (req, res) => {
   const tagUid = req.body.tagUid;
-  const username = req.user.username;  // Assuming the username is available in the request object
-
-  // Log a generic message without the actual tag UID
-  logger.info(`Adding a new RFID tag for user ${username}.`);
-
-  const db = new Database();
+  const targetUsername = req.body.username; // Correct variable from the request body
 
   try {
-      await db.insertRfidTag(tagUid, username); // Pass the username to the method
+      await db.insertRfidTag(tagUid, targetUsername); // Use targetUsername
 
-      // Log a success message without revealing the tag UID
-      logger.info(`RFID tag added successfully for user ${username}`);
-
+      logger.info(`RFID tag added successfully for user ${targetUsername}`);
       res.status(200).send(`RFID tag added successfully.`);
   } catch (error) {
       logger.error(`Error adding RFID tag: ${error.message}`);
       res.status(500).send(`Error adding RFID tag: ${error.message}`);
   }
 });
+
+
 
 
 app.get('/users', ensureAuthenticated, async (req, res) => {
