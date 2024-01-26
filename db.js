@@ -12,11 +12,14 @@ class Database {
         logger.info('Database initialized with Prisma');
     }
 
-    async insertRfidTag(tagUid) {
+    async insertRfidTag(tagUid, username) {
         try {
             const hashedTag = await argon2.hash(tagUid);
             const newTag = await prisma.validTag.create({
-                data: { tag: hashedTag }
+                data: { 
+                    tag: hashedTag,
+                    username: username // Add the username field
+                }
             });
             return newTag;
         } catch (err) {
@@ -24,6 +27,7 @@ class Database {
             throw err;
         }
     }
+    
 
     async removeRfidTag(tagUid) {
         try {
@@ -146,12 +150,34 @@ class Database {
     }
 
     async getUsers() {
-        return await prisma.user.findMany();
+        try {
+            logger.info("Querying database for users...");
+            const users = await prisma.user.findMany({
+                select: {
+                    username: true,
+                    createdAt: true,
+                }
+            });
+            logger.info("Users retrieved:", users);
+            return users;
+        } catch (err) {
+            logger.error("Error querying users from database:", err);
+            throw err; // rethrow the error for the route handler to catch
+        }
     }
-
+    
     async getRfidTags() {
-        return await prisma.validTag.findMany();
+        try {
+            logger.info("Querying database for RFID tags...");
+            const tags = await prisma.validTag.findMany();
+            logger.info("RFID tags retrieved:", tags);
+            return tags;
+        } catch (err) {
+            logger.error("Error querying RFID tags from database:", err);
+            throw err;
+        }
     }
+    
 
 }
 

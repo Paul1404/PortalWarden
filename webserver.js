@@ -213,17 +213,18 @@ app.get('/', ensureAuthenticated, (req, res) => {
 
 app.post('/add-rfid', ensureAuthenticated, async (req, res) => {
   const tagUid = req.body.tagUid;
+  const username = req.user.username;  // Assuming the username is available in the request object
 
   // Log a generic message without the actual tag UID
-  logger.info(`Adding a new RFID tag.`);
-  
+  logger.info(`Adding a new RFID tag for user ${username}.`);
+
   const db = new Database();
 
   try {
-      await db.insertRfidTag(tagUid);
+      await db.insertRfidTag(tagUid, username); // Pass the username to the method
 
       // Log a success message without revealing the tag UID
-      logger.info(`RFID tag added successfully`);
+      logger.info(`RFID tag added successfully for user ${username}`);
 
       res.status(200).send(`RFID tag added successfully.`);
   } catch (error) {
@@ -232,23 +233,31 @@ app.post('/add-rfid', ensureAuthenticated, async (req, res) => {
   }
 });
 
+
 app.get('/users', ensureAuthenticated, async (req, res) => {
   try {
-      const users = await db.getUsers(); // You will need to create this method in your Database class
+      logger.info("Fetching users...");
+      const users = await db.getUsers();
+      logger.info("Users fetched:", users);
       res.json(users);
   } catch (err) {
-      res.status(500).send(`Error retrieving users: ${err.message}`);
+      logger.error("Error retrieving users:", err);
+      res.status(500).json({ error: `Error retrieving users: ${err.message}` });
   }
 });
 
 app.get('/rfid-tags', ensureAuthenticated, async (req, res) => {
   try {
-      const tags = await db.getRfidTags(); // You will need to create this method in your Database class
+      logger.info("Fetching RFID tags...");
+      const tags = await db.getRfidTags();
+      logger.info("RFID tags fetched:", tags);
       res.json(tags);
   } catch (err) {
-      res.status(500).send(`Error retrieving RFID tags: ${err.message}`);
+      logger.error("Error retrieving RFID tags:", err);
+      res.status(500).json({ error: `Error retrieving RFID tags: ${err.message}` });
   }
 });
+
 
 
 
