@@ -1,17 +1,31 @@
 const { PrismaClient } = require('@prisma/client');
 const argon2 = require('argon2');
-const saltRounds = 10;
 const createLogger = require('./logger');
 const logger = createLogger(__filename);
 
 const prisma = new PrismaClient();
 
+/**
+ * Represents the database handling for RFID and user management.
+ * Utilizes Prisma as an ORM for database operations and Argon2 for hashing.
+ */
 class Database {
+    /**
+     * Constructs a new Database instance and sets the maximum users allowed.
+     */
     constructor() {
         this.maxUsers = process.env.MAX_USERS || 5;
         logger.info('Database initialized with Prisma');
     }
 
+    /**
+     * Inserts an RFID tag into the database after hashing it.
+     * 
+     * @param {string} tagUid - The unique identifier of the RFID tag.
+     * @param {string} username - The username associated with the RFID tag.
+     * @returns {Promise<Object>} The newly created RFID tag record.
+     * @throws {Error} If an error occurs during the database operation.
+     */
     async insertRfidTag(tagUid, username) {
         try {
             const hashedTag = await argon2.hash(tagUid);
@@ -29,6 +43,12 @@ class Database {
     }
     
 
+    /**
+     * Removes an RFID tag from the database.
+     * 
+     * @param {string} tagUid - The unique identifier of the RFID tag to be removed.
+     * @throws {Error} If the tag is not found or a database error occurs.
+     */
     async removeRfidTag(tagUid) {
         try {
             const tags = await prisma.validTag.findMany();
@@ -47,6 +67,14 @@ class Database {
         }
     }
 
+    /**
+     * Adds a new user to the database after hashing their password.
+     * 
+     * @param {string} username - The username for the new user.
+     * @param {string} password - The password for the new user.
+     * @returns {Promise<Object>} The newly created user record.
+     * @throws {Error} If the username already exists or a database error occurs.
+     */
     async addUser(username, password) {
         try {
             const existingUser = await prisma.user.findUnique({
@@ -69,6 +97,12 @@ class Database {
         }
     }
 
+    /**
+     * Counts the number of users in the database.
+     * 
+     * @returns {Promise<number>} The count of users in the database.
+     * @throws {Error} If a database error occurs.
+     */
     async getUserCount() {
         try {
             const count = await prisma.user.count();
@@ -79,6 +113,13 @@ class Database {
         }
     }
 
+    /**
+     * Retrieves an RFID tag from the database based on its UID.
+     * 
+     * @param {string} tagUid - The unique identifier of the RFID tag.
+     * @returns {Promise<Object|null>} The RFID tag record if found, otherwise null.
+     * @throws {Error} If a database error occurs.
+     */
     async getTag(tagUid) {
         try {
             const hashedTag = await argon2.hash(tagUid);
@@ -91,6 +132,13 @@ class Database {
         }
     }
 
+    /**
+     * Finds a user by their username.
+     * 
+     * @param {string} username - The username of the user to find.
+     * @returns {Promise<Object|null>} The user record if found, otherwise null.
+     * @throws {Error} If a database error occurs.
+     */
     async findUserByUsername(username) {
         try {
             const user = await prisma.user.findUnique({
@@ -103,6 +151,14 @@ class Database {
         }
     }
 
+    /**
+     * Verifies if the provided password matches the stored hash for a given user.
+     * 
+     * @param {string} username - The username of the user.
+     * @param {string} password - The password to verify.
+     * @returns {Promise<boolean>} True if the password matches, otherwise false.
+     * @throws {Error} If a database error occurs.
+     */
     async verifyUserPassword(username, password) {
         try {
             const user = await this.findUserByUsername(username);
@@ -116,6 +172,13 @@ class Database {
         }
     }
 
+    /**
+     * Finds a user by their ID.
+     * 
+     * @param {number} id - The ID of the user to find.
+     * @returns {Promise<Object|null>} The user record if found, otherwise null.
+     * @throws {Error} If a database error occurs.
+     */
     async findUserById(id) {
         try {
             const user = await prisma.user.findUnique({
@@ -128,6 +191,12 @@ class Database {
         }
     }
 
+    /**
+     * Removes a user from the database by their username.
+     * 
+     * @param {string} username - The username of the user to remove.
+     * @throws {Error} If the user is not found or a database error occurs.
+     */
     async removeUser(username) {
         try {
             const user = await prisma.user.findUnique({
@@ -149,6 +218,12 @@ class Database {
         }
     }
 
+    /**
+     * Retrieves all users from the database.
+     * 
+     * @returns {Promise<Array>} A list of user records.
+     * @throws {Error} If a database error occurs.
+     */
     async getUsers() {
         try {
             logger.info("Querying database for users...");
@@ -166,6 +241,12 @@ class Database {
         }
     }
     
+    /**
+     * Retrieves all RFID tags from the database.
+     * 
+     * @returns {Promise<Array>} A list of RFID tag records.
+     * @throws {Error} If a database error occurs.
+     */
     async getRfidTags() {
         try {
             logger.info("Querying database for RFID tags...");
