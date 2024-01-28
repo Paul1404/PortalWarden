@@ -233,13 +233,40 @@ class Database {
                     createdAt: true,
                 }
             });
-            logger.info("Users retrieved:", users);
-            return users;
+    
+            // Format 'createdAt' for each user
+            const formattedUsers = users.map(user => {
+                return {
+                    ...user,
+                    createdAt: this.formatDate(user.createdAt)
+                };
+            });
+    
+            logger.info("Users retrieved:", formattedUsers);
+            return formattedUsers;
         } catch (err) {
             logger.error("Error querying users from database:", err);
-            throw err; // rethrow the error for the route handler to catch
+            throw err;
         }
     }
+    
+    /**
+     * Formats a date to a more human-readable string.
+     * 
+     * @param {Date} date - The date object to format.
+     * @returns {string} A formatted date string.
+     */
+    formatDate(date) {
+        return date.toLocaleString('en-GB', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit', 
+            second: '2-digit' 
+        });
+    }
+    
     
     /**
      * Retrieves all RFID tags from the database.
