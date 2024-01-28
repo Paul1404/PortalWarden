@@ -130,3 +130,4 @@ dist
 rfidTags.db
 prisma/rfid.db
 prisma/access-control.db
+key.pem

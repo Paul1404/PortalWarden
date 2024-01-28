@@ -8,6 +8,7 @@ const Database = require('./db');
 const db = new Database();
 require('dotenv').config();
 const fs = require('fs');
+const https = require('https');
 const argon2 = require('argon2');
 const envFile = './.env';
 const dotenv = require('dotenv');
@@ -20,6 +21,13 @@ const port = 3000;
 
 const createLogger = require('./logger');
 const logger = createLogger(__filename);
+
+const privateKey = fs.readFileSync(path.join(__dirname, 'key.pem'), 'utf8');
+const certificate = fs.readFileSync(path.join(__dirname, 'cert.pem'), 'utf8');
+
+const credentials = { key: privateKey, cert: certificate };
+
+const httpsServer = https.createServer(credentials, app);
 
 
 app.use(express.urlencoded({ extended: true }));
@@ -351,9 +359,12 @@ async function main() {
     // Set up the keypress listener for graceful shutdown
     setupKeypressListener(db);
 
-    // Start the Express server
-    app.listen(port, () => {
-      logger.info(`Server running on http://localhost:${port}`);
+    // Create HTTPS server
+    const httpsServer = https.createServer(credentials, app);
+
+    // Start the HTTPS server
+    httpsServer.listen(port, () => {
+      logger.info(`HTTPS Server running on https://localhost:${port}`);
     });
   } catch (error) {
     logger.error('Failed to start the application:', error);
