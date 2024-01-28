@@ -3,7 +3,7 @@
 ✔ the user must install prisma globally or otherwise fix this issue in the script @done (1/25/2024, 10:04:15 PM)
 ✔ Option to add remove users from the web interface @done (1/25/2024, 10:34:19 PM)
 ✔ Option to show rfid-code users in the web interface @done (1/25/2024, 11:38:39 PM)
-☐ HTTPS for the web interface
+✔ HTTPS for the web interface @done (1/28/2024, 9:37:53 PM)
 ☐ Testing hardware connectivity with rpi
 ☐ Enhance webserver.js
 ☐ Test app.js
