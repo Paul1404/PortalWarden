@@ -2,6 +2,16 @@ const winston = require('winston');
 const path = require('path');
 const fs = require('fs');
 
+/**
+ * Creates a logger instance for a given module.
+ * 
+ * The logger will write logs to the console and to two files: 'error.log' for error level logs
+ * and 'combined.log' for all logs. Logs are stored in a directory structure under 'logs' directory.
+ * The directory is named after the script file that uses the logger.
+ * 
+ * @param {string} modulePath - The file path of the module that requires logging.
+ * @returns {winston.Logger} A Winston logger instance configured for the module.
+ */
 function createLogger(modulePath) {
     // Extract the base name of the script file for subdirectory naming
     const scriptName = path.basename(modulePath);
