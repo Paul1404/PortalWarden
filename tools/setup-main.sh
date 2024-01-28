@@ -1,6 +1,10 @@
 #!/bin/bash
 
-# Logging function
+# This script sets up the environment for a project.
+# It performs several tasks including generating SSL certificates, 
+# preparing the .env file, and managing Docker containers.
+
+# Logging function to record the setup process
 log() {
     level=$1
     shift
@@ -9,23 +13,23 @@ log() {
     echo "[$timestamp] $level: $msg" | tee -a "$LOGFILE"
 }
 
-# Determine the script's current directory and base directory
+# Determine script and base directory paths
 SCRIPT_DIR=$(dirname "$(readlink -f "$0")")
 BASEDIR=$(dirname "$SCRIPT_DIR")
 
-# Log directory and file setup
+# Setup logging directory and file
 LOGDIR="$BASEDIR/logs/setup"
 mkdir -p "$LOGDIR"
 LOGFILE="$LOGDIR/setup-main_$(date +%Y%m%d_%H%M%S).log"
 
 log "INFO" "Starting setup script"
 
-# Function to check if a command exists
+# Function to check if a command exists in the system
 command_exists() {
     type "$1" &> /dev/null ;
 }
 
-# Function to install a command if it does not exist
+# Function to install a command if not already present
 install_command() {
     command=$1
     package=$2
@@ -38,95 +42,79 @@ install_command() {
     fi
 }
 
-# Function to read password with asterisk feedback
-read_password() {
-    prompt=$1
-    echo -n "$prompt"
-    stty -echo
-    trap 'stty echo' EXIT
+# Function to generate a self-signed SSL certificate
+generate_ssl_certificate() {
+    SSL_DIR="$BASEDIR/ssl"
+    CERT_FILE="$SSL_DIR/cert.pem"
+    KEY_FILE="$SSL_DIR/key.pem"
 
-    password=""
-    while IFS= read -r -s -n 1 char; do
-        if [[ $char == $'\0' ]]; then
-            break
-        fi
-        password+="$char"
-        echo -n '*'
-    done
-    stty echo
-    trap - EXIT
-    echo
-    echo "$password"
+    mkdir -p "$SSL_DIR"
+
+    if [[ ! -f "$CERT_FILE" ]] || [[ ! -f "$KEY_FILE" ]]; then
+        log "INFO" "Generating self-signed SSL certificate..."
+        openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+            -keyout "$KEY_FILE" -out "$CERT_FILE" \
+            -subj "/C=DE/ST=Bavaria/L=Untereuerheim/O=Localhost/CN=localhost"
+        log "INFO" "SSL certificate generated at $SSL_DIR"
+    else
+        log "INFO" "SSL certificate already exists."
+    fi
 }
 
-# Check and install required commands
+# Check for and install required commands
 install_command argon2 argon2
 install_command awk gawk
+install_command openssl openssl
 
 # Handling the .env file
 ENV_FILE="$BASEDIR/.env"
-
 if [ ! -f "$ENV_FILE" ]; then
     if [ -f "$SCRIPT_DIR/.env.sample" ]; then
         cp "$SCRIPT_DIR/.env.sample" "$ENV_FILE"
-        log "INFO" "Copied .env.sample from tools to .env in the parent directory"
+        log "INFO" "Copied .env.sample to .env"
     else
-        log "ERROR" "The .env.sample file does not exist in the tools directory"
+        log "ERROR" ".env.sample file not found"
         exit 1
     fi
 fi
 
-# Generate a more secure random string for SESSION_SECRET
+# Generate SSL certificate
+generate_ssl_certificate
+
+# Generate a secure random string for SESSION_SECRET
 RANDOM_STRING=$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 32)
-log "INFO" "Generated a secure RANDOM_STRING for SESSION_SECRET"
+log "INFO" "Generated secure RANDOM_STRING for SESSION_SECRET"
 
 # Update SESSION_SECRET in .env
 if grep -q "SESSION_SECRET=" "$ENV_FILE"; then
     sed -i "/SESSION_SECRET=/c\SESSION_SECRET=$RANDOM_STRING" "$ENV_FILE"
-    log "INFO" "Replaced existing SESSION_SECRET in .env"
+    log "INFO" "SESSION_SECRET updated in .env"
 else
-    tail -c1 "$ENV_FILE" | read -r _ || echo >> "$ENV_FILE"
     echo "SESSION_SECRET=$RANDOM_STRING" >> "$ENV_FILE"
-    log "INFO" "Appended SESSION_SECRET to .env"
+    log "INFO" "SESSION_SECRET added to .env"
 fi
 
-# Ask for the PostgreSQL password
-echo -n "Enter the PostgreSQL password: "
+# Update POSTGRES_PASSWORD in .env
+echo -n "Enter PostgreSQL password: "
 IFS= read -rs POSTGRES_PASSWORD
 echo
 log "INFO" "Setting PostgreSQL password"
-
-# Update POSTGRES_PASSWORD in .env
-if grep -q "POSTGRES_PASSWORD=" "$ENV_FILE"; then
-    sed -i "/POSTGRES_PASSWORD=/c\POSTGRES_PASSWORD=$POSTGRES_PASSWORD" "$ENV_FILE"
-    log "INFO" "Updated existing POSTGRES_PASSWORD in .env"
-else
-    tail -c1 "$ENV_FILE" | read -r _ || echo >> "$ENV_FILE"
-    echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" >> "$ENV_FILE"
-    log "INFO" "Appended POSTGRES_PASSWORD to .env"
-fi
+sed -i "/POSTGRES_PASSWORD=/c\POSTGRES_PASSWORD=$POSTGRES_PASSWORD" "$ENV_FILE"
 
 # Update DATABASE_URL in .env
-if grep -q "DATABASE_URL=" "$ENV_FILE"; then
-    sed -i "s/DATABASE_URL=\"postgresql:\/\/admin:.*@/DATABASE_URL=\"postgresql:\/\/admin:$POSTGRES_PASSWORD@/" "$ENV_FILE"
-    log "INFO" "Updated DATABASE_URL in .env"
-fi
+sed -i "s/DATABASE_URL=\"postgresql:\/\/admin:.*@/DATABASE_URL=\"postgresql:\/\/admin:$POSTGRES_PASSWORD@/" "$ENV_FILE"
+log "INFO" "DATABASE_URL updated in .env"
 
 # Docker Compose Actions
 cd "$BASEDIR"
-log "INFO" "Asking user to start Docker containers"
-echo "Do you want to start the Database-Docker container now? (Recommended) (y/n)"
+echo "Start Docker containers now? (y/n)"
 read -r start_containers
-
 if [[ "$start_containers" =~ ^[Yy]$ ]]; then
-    log "INFO" "Starting Docker container with Docker Compose"
     docker-compose -p rpi-rfid-postgres -f docker/postgres-compose.yml up -d
     log "INFO" "Docker containers started"
 else
-    log "INFO" "Docker container not started. Informed user about manual start."
-    echo "You can start the container with this command below the compose file is located in the docker directory make sure to point to it when running this command."
-    echo "docker-compose -p rpi-rfid-postgres -f postgres-compose.yml up -d"
+    log "INFO" "Docker containers not started"
+    echo "Manual start command: docker-compose -p rpi-rfid-postgres -f docker/postgres-compose.yml up -d"
 fi
 
 log "INFO" "Setup script completed"
-exit

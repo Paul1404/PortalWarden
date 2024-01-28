@@ -22,8 +22,9 @@ const port = 3000;
 const createLogger = require('./logger');
 const logger = createLogger(__filename);
 
-const privateKey = fs.readFileSync(path.join(__dirname, 'key.pem'), 'utf8');
-const certificate = fs.readFileSync(path.join(__dirname, 'cert.pem'), 'utf8');
+// Update the file paths to point to the ssl directory
+const privateKey = fs.readFileSync(path.join(__dirname, 'ssl', 'key.pem'), 'utf8');
+const certificate = fs.readFileSync(path.join(__dirname, 'ssl', 'cert.pem'), 'utf8');
 
 const credentials = { key: privateKey, cert: certificate };
 
