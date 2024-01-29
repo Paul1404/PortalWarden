@@ -7,8 +7,8 @@ Welcome to the RPI-RFID-Door-Control repository! This guide will walk you throug
 ## Prerequisites 📋
 
 Before you begin, ensure you have the following installed:
-- Node.js and npm (Node Package Manager) 📦
-- Docker and Docker Compose 🐳
+- Node.js and npm (Node Package Manager) 📦 (Version 20.11.0 Recommended)
+- Docker and Docker Compose 🐳 (Install via: https://docs.docker.com/engine/install/ubuntu/#installation-methods)
 
 ## Installation and Setup 🛠️
 
