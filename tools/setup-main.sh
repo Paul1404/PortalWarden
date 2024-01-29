@@ -90,7 +90,7 @@ if grep -q "SESSION_SECRET=" "$ENV_FILE"; then
     sed -i "/SESSION_SECRET=/c\SESSION_SECRET=$RANDOM_STRING" "$ENV_FILE"
     log "INFO" "SESSION_SECRET updated in .env"
 else
-    echo "SESSION_SECRET=$RANDOM_STRING" >> "$ENV_FILE"
+    echo -e "\nSESSION_SECRET=$RANDOM_STRING" >> "$ENV_FILE"
     log "INFO" "SESSION_SECRET added to .env"
 fi
 
@@ -99,22 +99,36 @@ echo -n "Enter PostgreSQL password: "
 IFS= read -rs POSTGRES_PASSWORD
 echo
 log "INFO" "Setting PostgreSQL password"
-sed -i "/POSTGRES_PASSWORD=/c\POSTGRES_PASSWORD=$POSTGRES_PASSWORD" "$ENV_FILE"
 
-# Update DATABASE_URL in .env
-sed -i "s/DATABASE_URL=\"postgresql:\/\/admin:.*@/DATABASE_URL=\"postgresql:\/\/admin:$POSTGRES_PASSWORD@/" "$ENV_FILE"
-log "INFO" "DATABASE_URL updated in .env"
+# Aktualisierung der POSTGRES_PASSWORD in der .env-Datei
+if grep -q "POSTGRES_PASSWORD=" "$ENV_FILE"; then
+    sed -i "/POSTGRES_PASSWORD=/c\POSTGRES_PASSWORD=$POSTGRES_PASSWORD" "$ENV_FILE"
+    log "INFO" "POSTGRES_PASSWORD updated in .env"
+else
+    echo "POSTGRES_PASSWORD=$POSTGRES_PASSWORD" >> "$ENV_FILE"
+    log "INFO" "POSTGRES_PASSWORD added to .env"
+fi
+
+# Aktualisierung der DATABASE_URL in der .env-Datei
+if grep -q "DATABASE_URL=" "$ENV_FILE"; then
+    sed -i "s|DATABASE_URL=\"postgresql://admin:.*@|DATABASE_URL=\"postgresql://admin:$POSTGRES_PASSWORD@|" "$ENV_FILE"
+    log "INFO" "DATABASE_URL updated in .env"
+else
+    echo "DATABASE_URL=\"postgresql://admin:$POSTGRES_PASSWORD@localhost/rpi-rfid-db\"" >> "$ENV_FILE"
+    log "INFO" "DATABASE_URL added to .env"
+fi
+
 
 # Docker Compose Actions
 cd "$BASEDIR"
 echo "Start Docker containers now? (y/n)"
 read -r start_containers
 if [[ "$start_containers" =~ ^[Yy]$ ]]; then
-    docker-compose -p rpi-rfid-postgres -f docker/postgres-compose.yml up -d
+    docker-compose -p rpi-rfid-postgres -f postgres-compose.yml up -d
     log "INFO" "Docker containers started"
 else
     log "INFO" "Docker containers not started"
-    echo "Manual start command: docker-compose -p rpi-rfid-postgres -f docker/postgres-compose.yml up -d"
+    echo "Manual start command: docker-compose -p rpi-rfid-postgres -f postgres-compose.yml up -d"
 fi
 
 log "INFO" "Setup script completed"

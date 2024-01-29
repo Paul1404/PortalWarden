@@ -132,3 +132,4 @@ prisma/rfid.db
 prisma/access-control.db
 key.pem
 ssl/cert.cer
+ssl/cert.pem

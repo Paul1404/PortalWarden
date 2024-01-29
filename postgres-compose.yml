@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: rpi-rfid-db
       POSTGRES_USER: admin
-      POSTGRES_PASSWORD: Test1
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
@@ -20,5 +20,5 @@ volumes:
   postgres-data:
 
 networks:
-  rpi-rfid-network:
+  db-network:
 
