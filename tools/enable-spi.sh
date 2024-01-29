@@ -51,9 +51,9 @@ else
     log "Backup of config file created at ${CONFIG_FILE}.bak."
 
     # Append the SPI configuration to the config file
-    # Check for successful operation
-    echo $SPI_CONFIG >> $CONFIG_FILE
-    if [ $? -eq 0 ]; then
+    # Directly check the command execution without using $?
+    echo "$SPI_CONFIG" >> "$CONFIG_FILE"
+    if echo "$SPI_CONFIG" >> "$CONFIG_FILE"; then
         log "SPI has been enabled in $CONFIG_FILE. A reboot is required."
     else
         log "Failed to enable SPI. Please check the log for errors."
@@ -63,7 +63,7 @@ fi
 
 # Offer to reboot the system
 # Accepts user input and reboots if the user agrees
-read -p "Would you like to reboot now? (y/n) " answer
+read -rp "Would you like to reboot now? (y/n) " answer
 case ${answer:0:1} in
     y|Y )
     log "Rebooting the system."

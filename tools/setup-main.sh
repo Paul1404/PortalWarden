@@ -1,13 +1,14 @@
 #!/bin/bash
 
 # This script sets up the environment for a project.
-# It performs several tasks including generating SSL certificates, 
+# It performs several tasks including generating SSL certificates,
 # preparing the .env file, and managing Docker containers.
 
 # Logging function to record the setup process
 log() {
     level=$1
     shift
+    # shellcheck disable=SC2124
     msg="$@"
     timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     echo "[$timestamp] $level: $msg" | tee -a "$LOGFILE"
@@ -36,7 +37,7 @@ install_command() {
 
     if ! command_exists "$command"; then
         log "INFO" "Installing $command..."
-        sudo apt-get install -y "$package" | tee -a $LOGFILE
+        sudo apt-get install -y "$package" | tee -a "$LOGFILE"
     else
         log "INFO" "$command already installed."
     fi
@@ -120,7 +121,7 @@ fi
 
 
 # Docker Compose Actions
-cd "$BASEDIR"
+cd "$BASEDIR" || exit 1
 echo "Start Docker containers now? (y/n)"
 read -r start_containers
 if [[ "$start_containers" =~ ^[Yy]$ ]]; then
@@ -130,5 +131,6 @@ else
     log "INFO" "Docker containers not started"
     echo "Manual start command: docker-compose -p rpi-rfid-postgres -f postgres-compose.yml up -d"
 fi
+
 
 log "INFO" "Setup script completed"

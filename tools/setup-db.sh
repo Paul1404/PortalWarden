@@ -10,6 +10,7 @@ BASEDIR=$(dirname "$SCRIPT_DIR")
 log() {
     level=$1
     shift
+    # shellcheck disable=SC2124
     msg="$@"
     timestamp=$(date '+%Y-%m-%d %H:%M:%S')
     echo "[$timestamp] $level: $msg" | tee -a "$LOGFILE"
@@ -23,20 +24,20 @@ LOGFILE="$LOGDIR/setup-db_$(date +%Y%m%d_%H%M%S).log"
 log "INFO" "Running Prisma migrations to set up the database..."
 
 # Navigate to the root directory containing your Prisma schema and node_modules
-cd $BASEDIR
+cd "$BASEDIR" || exit
 
 # Run Prisma migrate using the local installation
-./node_modules/.bin/prisma migrate deploy | tee -a $LOGFILE
+./node_modules/.bin/prisma migrate deploy | tee -a "$LOGFILE"
 
 log "INFO" "Database setup complete."
 
 # Ask the user if they want to create a new user
 log "INFO" "Asking user about creating a new user..."
-read -p "Do you want to create a new user? (y/n) " answer
+read -rp "Do you want to create a new user? (y/n) " answer
 case $answer in
     [Yy]* ) 
         log "INFO" "Creating new user..."
-        node ./tools/addUser.js | tee -a $LOGFILE
+        node ./tools/addUser.js | tee -a "$LOGFILE"
         ;;
     [Nn]* ) 
         log "INFO" "Skipping user creation."
@@ -48,11 +49,11 @@ esac
 
 # Ask the user if they want to enable SPI
 log "INFO" "Asking user about enabling SPI on the Raspberry Pi..."
-read -p "Do you want to enable SPI on the Raspberry Pi? (y/n) " spi_answer
+read -rp "Do you want to enable SPI on the Raspberry Pi? (y/n) " spi_answer
 case $spi_answer in
     [Yy]* ) 
         log "INFO" "Enabling SPI..."
-        ./enable-spi.sh | tee -a $LOGFILE
+        ./enable-spi.sh | tee -a "$LOGFILE"
         log "INFO" "SPI enabled."
         ;;
     [Nn]* ) 
@@ -65,3 +66,4 @@ esac
 
 log "INFO" "Finished setup. Webserver can be run with: npm run web"
 exit
+
