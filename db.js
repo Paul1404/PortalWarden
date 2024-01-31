@@ -285,6 +285,10 @@ class Database {
             throw err;
         }
     }
+
+    async disconnect() {
+        await prisma.$disconnect();
+    }
     
 
 }
