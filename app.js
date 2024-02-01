@@ -111,7 +111,7 @@ function setupKeypressListener() {
  */
 async function gracefulShutdown() {
     try {
-        await prisma.$disconnect();
+        await db.disconnect();
         logger.info('Database connection closed.');
     } catch (error) {
         logger.error('Error closing database connection:', error);
