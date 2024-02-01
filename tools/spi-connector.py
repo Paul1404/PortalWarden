@@ -5,6 +5,10 @@ import logging
 import psycopg2
 from datetime import datetime
 import traceback
+from argon2 import PasswordHasher
+
+# Initialize Argon2 PasswordHasher
+ph = PasswordHasher()
 
 def configure_logging():
     """
@@ -49,44 +53,62 @@ class RFIDReader:
             logger.error(f"Database error when inserting log entry: {e}")
             self.conn.rollback()
             
-    def read_rfid(self):
+            
+    def check_validity(self, rfid_id):
         """
-        Continuously reads from the RFID reader, checks if the RFID tag is valid or invalid,
-        and logs the RFID ID.
+        Checks if an RFID ID is valid by comparing it to hashed values in the database.
         """
         try:
-            logger.info("Ready to read RFID card")
-            id, _ = self.reader.read_no_block()  # Assuming read_no_block() is what you intend; if not, use read()
-            if id:  # Proceed only if an RFID tag is detected
-                if self.is_valid_tag(id):
-                    self.insert_log(id)
-                else:
-                    logger.info(f"RFID ID: {id} is not a valid tag but will still be logged.")
-                    self.insert_log(id)  # Log the invalid RFID ID as well
-            else:
-                logger.info("No RFID tag detected.")
-            time.sleep(1)  # Sleep to prevent rapid repeated reads
-        except Exception as e:
-            logger.error(f"An error occurred while reading RFID: {e}")
+            # Retrieve the hashed RFID ID from the database
+            self.cursor.execute(
+                'SELECT "tag" FROM "ValidTag"'
+            )
+            retrieved_hashes = self.cursor.fetchall()
 
+            # Log the received RFID ID for debugging purposes
+            logger.info(f"Received RFID ID: {rfid_id}")
 
-    def is_valid_tag(self, rfid_id):
-            """
-            Checks if an RFID tag is valid by querying the ValidTag table in the database.
-            Returns True if the tag is valid, False otherwise.
-            """
-            try:
-                self.cursor.execute('SELECT EXISTS (SELECT 1 FROM "ValidTag" WHERE "tagId" = %s)', (rfid_id,))
-                result = self.cursor.fetchone()
-                if result and result[0]:
-                    logger.info(f"RFID ID: {rfid_id} is a valid tag.")
+            # Iterate through retrieved hashes and check if any match
+            for retrieved_hash in retrieved_hashes:
+                database_hash = retrieved_hash[0]
+                logger.info(f"Database Hash: {database_hash}")
+
+                if ph.verify(database_hash, str(rfid_id)):
+                    logger.info(f"RFID ID {rfid_id} is valid.")
                     return True
+
+            # If no matching hash found
+            logger.info(f"RFID ID {rfid_id} is not valid.")
+            return False
+
+        except Exception as e:
+            logger.error(f"Database error when checking RFID validity: {e}")
+            return False
+
+        
+            
+    def read_rfid(self):
+            try:
+                logger.info("Ready to read RFID card")
+                id, _ = self.reader.read_no_block()
+                if id:
+                    logger.info(f"RFID ID: {id}")
+
+                    # Check if the RFID ID is valid
+                    is_valid = self.check_validity(id)
+
+                    if is_valid:
+                        logger.info("RFID ID is valid and will be logged.")
+                        self.insert_log(id)
+                    else:
+                        logger.info("RFID ID is not valid but will still be logged.")
+
+                    time.sleep(1)
                 else:
-                    logger.info(f"RFID ID: {rfid_id} is not a valid tag.")
-                    return False
+                    logger.info("No RFID tag detected.")
+                time.sleep(1)
             except Exception as e:
-                logger.error(f"Database error when checking RFID validity: {e}")
-                return False
+                logger.error(f"An error occurred while reading RFID: {e}")
 
 
     def close(self):
