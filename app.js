@@ -1,100 +1,178 @@
-const { spawn } = require('child_process');
-const Database = require('./db');
-const { initHardware, controlServoAndLEDs } = require('./hardwareControl');
+const { spawn, exec } = require('child_process');
 const readline = require('readline');
-const winston = require('winston');
-const path = require('path');
-
-
 const createLogger = require('./logger');
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
 const logger = createLogger(__filename);
 
-// Function to start server.js
+// Environment Variables
+const PYTHON_SCRIPT = process.env.PYTHON_SCRIPT || 'spi-connector.py';
+const SERVER_SCRIPT = process.env.SERVER_SCRIPT || 'webserver.js';
+
+/**
+ * Starts the Node.js server using a child process.
+ * 
+ * This function spawns a child process to run the server script specified
+ * by the SERVER_SCRIPT environment variable. It logs the standard output
+ * and standard error of the server process to help with debugging.
+ * Additionally, it captures the server's output, which can be used for
+ * further analysis or logging. If the server process fails to start, it
+ * logs the error. When the server process exits, it logs the exit code
+ * and the captured output.
+ */
 function startServer() {
-    const server = spawn('node', ['webserver.js']);
+    const server = spawn('node', [SERVER_SCRIPT], { stdio: 'pipe' });
+
+    let serverOutput = '';
 
     server.stdout.on('data', (data) => {
-        logger.info(`Server: ${data}`);
+        serverOutput += data;
     });
 
     server.stderr.on('data', (data) => {
-        logger.error(`Server Error: ${data}`);
+        logger.error(`Server Error: ${data.toString()}`);
     });
 
     server.on('close', (code) => {
         logger.info(`Server process exited with code ${code}`);
+        logger.info(`Server Output: ${serverOutput}`);
+    });
+
+    server.on('error', (err) => {
+        logger.error(`Failed to start server: ${err}`);
     });
 }
+
 
 /**
  * Executes a Python script to read RFID data.
- * Logs the output or error to the Winston logger.
+ *
+ * This function uses a child process to run the Python script specified
+ * by the PYTHON_SCRIPT environment variable. It collects and buffers the
+ * standard output (stdout) and standard error (stderr) of the Python process.
+ * - The standard output is logged as informational data.
+ * - The standard error is logged as an error.
+ * If the Python process fails to start, it logs the error.
+ * Upon closing of the Python process, it logs the exit code along with
+ * the buffered output.
  */
 function runPythonScript() {
-    const pythonProcess = exec('python3 spi-connector.py', (err, stdout, stderr) => {
-        if (err) {
-            logger.error('Error executing spi-connector.py:', err);
-            return;
-        }
-        if (stdout) logger.info(`Python stdout: ${stdout}`);
-        if (stderr) logger.error(`Python stderr: ${stderr}`);
+    const pythonProcess = exec(`python3 ${PYTHON_SCRIPT}`);
+
+    let pythonOutput = '';
+
+    pythonProcess.stdout.on('data', (data) => {
+        pythonOutput += data;
     });
 
-    pythonProcess.on('exit', (code, signal) => {
-        logger.info(`Python script exited with code ${code} and signal ${signal}`);
+    pythonProcess.stderr.on('data', (data) => {
+        logger.error(`Python Error: ${data.toString()}`);
+    });
+
+    pythonProcess.on('close', (code) => {
+        logger.info(`Python script exited with code ${code}`);
+        logger.info(`Python Output: ${pythonOutput}`);
+    });
+
+    pythonProcess.on('error', (err) => {
+        logger.error(`Failed to start Python script: ${err}`);
     });
 }
 
+
 /**
- * Sets up a keypress listener to handle Ctrl+X for a graceful shutdown.
- * @param {Database} db - The database connection to close on shutdown.
+ * Sets up a keypress listener on the standard input (stdin) to handle a specific
+ * key combination (Ctrl+X) for initiating a graceful shutdown of the application.
+ *
+ * When the specified key combination is detected, the function logs the event and
+ * calls the gracefulShutdown function to handle the shutdown process.
  */
-function setupKeypressListener(db) {
+function setupKeypressListener() {
     readline.emitKeypressEvents(process.stdin);
     process.stdin.setRawMode(true);
 
     process.stdin.on('keypress', async (str, key) => {
         if (key.ctrl && key.name === 'x') {
             logger.info('Ctrl+X pressed. Initiating shutdown...');
-            await gracefulShutdown(db);
+            await gracefulShutdown();
         }
     });
 }
 
+
 /**
  * Handles the graceful shutdown of the application.
- * Closes the database connection and exits the process.
- * @param {Database} db - The database connection to close.
+ *
+ * This function attempts to close the database connection using Prisma's
+ * $disconnect method. It logs information about the disconnection and any
+ * potential errors that occur during the process. Finally, it exits the
+ * process with a status code of 0, indicating a normal termination.
  */
-async function gracefulShutdown(db) {
-    await db.close();
-    logger.info('Database connection closed.');
+async function gracefulShutdown() {
+    try {
+        await prisma.$disconnect();
+        logger.info('Database connection closed.');
+    } catch (error) {
+        logger.error('Error closing database connection:', error);
+    }
     process.exit(0);
 }
 
+
+/**
+ * Sets up signal handlers to gracefully shut down the application.
+ *
+ * This function listens for system signals:
+ * - SIGINT (typically triggered by Ctrl+C in the terminal), and
+ * - SIGTERM (sent by system shutdown commands).
+ *
+ * When either of these signals is received, the function logs the event
+ * and initiates the graceful shutdown process by calling the gracefulShutdown
+ * function.
+ */
+function setupSignalHandlers() {
+    process.on('SIGINT', async () => {
+        logger.info('SIGINT received. Initiating shutdown...');
+        await gracefulShutdown();
+    });
+
+    process.on('SIGTERM', async () => {
+        logger.info('SIGTERM received. Initiating shutdown...');
+        await gracefulShutdown();
+    });
+}
+
+
 /**
  * The main function of the application.
- * It initializes the hardware, sets up the keypress listener, and starts the Python script.
+ * 
+ * This function is the entry point of the application. It performs the following tasks:
+ * 1. Establishes a database connection using Prisma.
+ * 2. Starts the Node.js server and the Python script for RFID reading.
+ * 3. Sets up listeners for keypress events and system signals for graceful shutdown.
+ * 
+ * If an error occurs during any of these operations, it logs the error and initiates
+ * a graceful shutdown of the application.
  */
 async function main() {
-    const db = new Database();
-    initHardware();
+    try {
+        // Validate database connection
+        await prisma.$connect();
+        logger.info('Database connection established.');
 
-    // Check for command line arguments for RFID ID
-    // Example: npm run insert-rfid -- 123456789
-    const args = process.argv.slice(2); // Skip the first two elements
-    if (args.length > 0) {
-        const rfidId = args[0];
-        try {
-            await db.insertRfidTag(rfidId);
-            logger.info(`RFID ID ${rfidId} inserted into the database.`);
-        } catch (error) {
-            logger.error('Error inserting RFID ID into database:', error);
-        }
-    } else {
+        // Start the server and Python script
+        startServer();
         runPythonScript();
-        setupKeypressListener(db);
+
+        // Setup keypress and signal listeners
+        setupKeypressListener();
+        setupSignalHandlers();
+    } catch (error) {
+        logger.error('An error occurred in the main function:', error);
+        await gracefulShutdown();
     }
 }
+
 
 main();
