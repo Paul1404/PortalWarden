@@ -286,6 +286,43 @@ class Database {
         }
     }
 
+    /**
+     * Retrieves all RFID log entries from the database.
+     * 
+     * @returns {Promise<Array>} A list of RFID log entry records.
+     * @throws {Error} If a database error occurs.
+     */
+    async getRfidLogEntries() {
+        try {
+            logger.info("Querying database for RFID log entries...");
+            const logEntries = await prisma.rfidLog.findMany({
+                orderBy: {
+                    timestamp: 'desc', // Assuming you might want to order by timestamp descending
+                },
+                select: {
+                    id: true,
+                    rfidId: true,
+                    timestamp: true,
+                }
+            });
+
+            // Format the timestamp for each log entry
+            const formattedLogEntries = logEntries.map(entry => {
+                return {
+                    ...entry,
+                    timestamp: this.formatDate(entry.timestamp),
+                    rfidId: entry.rfidId.toString(), // Convert the BigInt to a string
+                };
+            });
+
+            logger.info("RFID log entries retrieved:", formattedLogEntries);
+            return formattedLogEntries;
+        } catch (err) {
+            logger.error("Error querying RFID log entries from database:", err);
+            throw err;
+        }
+    }
+
     async disconnect() {
         await prisma.$disconnect();
     }

@@ -21,9 +21,17 @@
                 ]
             });
 
+            // Initialize the new DataTable for RFID log entries
+            $('#rfidLogEntriesTable').DataTable({
+                "responsive": true,
+                "lengthChange": false,
+                "autoWidth": false
+            });
+
             // Fetch data for both tables
             fetchUsers();
             fetchRfidTags();
+            fetchRfidLogEntries();
         });
 
 
@@ -130,6 +138,29 @@
                     table.draw();
                 })
                 .catch(error => console.error('Error fetching RFID tags:', error));
+        }
+
+        function fetchRfidLogEntries() {
+            fetch('/rfid-logs')
+                .then(response => response.json())
+                .then(logEntries => {
+                    // Clear the table before adding new data
+                    const table = $('#rfidLogEntriesTable').DataTable();
+                    table.clear();
+        
+                    // Add the fetched RFID log entries to the DataTable
+                    logEntries.forEach(entry => {
+                        table.row.add([
+                            entry.id,         // Log entry ID
+                            entry.rfidId,     // RFID Tag UID
+                            entry.timestamp   // Timestamp of the log entry
+                        ]);
+                    });
+        
+                    // Draw the table to show the new data
+                    table.draw();
+                })
+                .catch(error => console.error('Error fetching RFID log entries:', error));
         }
         
      

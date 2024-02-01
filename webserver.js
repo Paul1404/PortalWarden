@@ -226,6 +226,16 @@ app.delete('/remove-user/:username', ensureAuthenticated, async (req, res) => {
     }
 });
 
+app.get('/rfid-logs', ensureAuthenticated, async (req, res) => {
+    try {
+        const logEntries = await db.getRfidLogEntries();
+        res.json(logEntries);
+    } catch (err) {
+        logger.error("Error retrieving RFID log entries:", err);
+        res.status(500).json({ error: `Error retrieving RFID log entries: ${err.message}` });
+    }
+});
+
 function setupKeypressListener(db, server) {
     if (process.stdin.isTTY) {
         readline.emitKeypressEvents(process.stdin);

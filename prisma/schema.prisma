@@ -20,3 +20,10 @@ model User {
   password  String
   createdAt DateTime @default(now()) // Creation timestamp for User
 }
+
+model RfidLog {
+  id        Int      @id @default(autoincrement())
+  rfidId    BigInt
+  timestamp DateTime @default(now())
+}
+
