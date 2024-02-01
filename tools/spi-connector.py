@@ -4,11 +4,33 @@ import time
 import logging
 import psycopg2
 from datetime import datetime
-import traceback
 from argon2 import PasswordHasher
+import os
+from decouple import config
 
 # Initialize Argon2 PasswordHasher
 ph = PasswordHasher()
+
+# Load the pin values from the .env file
+GREEN_LED_PIN = int(config('GREEN_LED_PIN', default='5'))
+RED_LED_PIN = int(config('RED_LED_PIN', default='3'))
+
+# Initialize GPIO settings
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(GREEN_LED_PIN, GPIO.OUT)
+GPIO.setup(RED_LED_PIN, GPIO.OUT)
+
+def turn_on_led(pin):
+    """
+    Turns on the LED connected to the specified GPIO pin.
+    """
+    GPIO.output(pin, GPIO.HIGH)
+
+def turn_off_led(pin):
+    """
+    Turns off the LED connected to the specified GPIO pin.
+    """
+    GPIO.output(pin, GPIO.LOW)
 
 def configure_logging():
     """
@@ -100,12 +122,21 @@ class RFIDReader:
                     if is_valid:
                         logger.info("RFID ID is valid and will be logged.")
                         self.insert_log(id)
+                        # Turn on the green LED if RFID is valid
+                        turn_on_led(GREEN_LED_PIN)
+                        turn_off_led(RED_LED_PIN)
                     else:
                         logger.info("RFID ID is not valid but will still be logged.")
+                        # Turn on the red LED if RFID is not valid
+                        turn_on_led(RED_LED_PIN)
+                        turn_off_led(GREEN_LED_PIN)
 
                     time.sleep(1)
                 else:
                     logger.info("No RFID tag detected.")
+                    # Turn off both LEDs if no RFID tag is detected
+                    turn_off_led(GREEN_LED_PIN)
+                    turn_off_led(RED_LED_PIN)
                 time.sleep(1)
             except Exception as e:
                 logger.error(f"An error occurred while reading RFID: {e}")
