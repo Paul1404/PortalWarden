@@ -3,11 +3,13 @@ const readline = require('readline');
 const createLogger = require('./logger');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const Database = require('./db.js');
+const db = new Database();
 
 const logger = createLogger(__filename);
 
 // Environment Variables
-const PYTHON_SCRIPT = process.env.PYTHON_SCRIPT || 'spi-connector.py';
+const PYTHON_SCRIPT = process.env.PYTHON_SCRIPT || '/tools/spi-connector.py';
 const SERVER_SCRIPT = process.env.SERVER_SCRIPT || 'webserver.js';
 
 /**

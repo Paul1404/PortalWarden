@@ -9,9 +9,12 @@ import os
 from decouple import config
 import signal
 import sys
+from argon2.exceptions import VerifyMismatchError
 
 # Initialize Argon2 PasswordHasher
 ph = PasswordHasher()
+
+last_invalid_scan_time = None  # Track the time of the last invalid RFID scan
 
 # Load the pin values from the .env file
 GREEN_LED_PIN = int(config('GREEN_LED_PIN', default='5'))
@@ -90,14 +93,21 @@ class DatabaseManager:
                     retrieved_hashes = cursor.fetchall()
 
                     for database_hash in retrieved_hashes:
-                        if ph.verify(database_hash[0], str(rfid_id)):
-                            logger.info(f"RFID ID {rfid_id} is valid.")
-                            return True
+                        try:
+                            if ph.verify(database_hash[0], str(rfid_id)):
+                                logger.info(f"RFID ID {rfid_id} is valid.")
+                                return True
+                        except VerifyMismatchError:
+                            continue  # This specific tag does not match, continue checking others
 
+                    # If we reach this point, no hashes matched the RFID tag
                     logger.info(f"RFID ID {rfid_id} is not valid.")
                     return False
         except psycopg2.Error as e:
             logger.error(f"Database error when checking RFID validity: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Unexpected error when checking RFID validity: {e}")
             return False
 
 # RFID Reader Class
@@ -107,37 +117,50 @@ class RFIDReader:
         self.db_manager = DatabaseManager()
 
     def read_rfid(self):
+        global last_invalid_scan_time
         try:
             id, _ = self.reader.read_no_block()
             if id:
                 logger.info(f"RFID ID: {id}")
-
                 if self.db_manager.check_validity(id):
                     logger.info("RFID ID is valid and will be logged.")
                     self.db_manager.insert_log(id)
                     turn_on_led(GREEN_LED_PIN)
-                    turn_off_led(RED_LED_PIN)
+                    turn_off_led(RED_LED_PIN)  # Ensure red LED is off if the tag is valid
+                    last_invalid_scan_time = None  # Reset the invalid scan tracker
+                    time.sleep(5)  # Provide visible feedback for a valid tag
                 else:
                     logger.info("RFID ID is not valid.")
-                    turn_on_led(RED_LED_PIN)
-                    turn_off_led(GREEN_LED_PIN)
-
-                time.sleep(1)  # Make this configurable if needed
+                    turn_on_led(RED_LED_PIN)  # Turn on red LED for invalid tag
+                    last_invalid_scan_time = time.time()  # Update the last invalid scan time
+                    # Removed turning off the green LED here to maintain state
+                    time.sleep(5)  # Provide visible feedback for an invalid tag
             else:
                 logger.info("No RFID tag detected.")
-                turn_off_led(GREEN_LED_PIN)
-                turn_off_led(RED_LED_PIN)
+                # Check if it's time to reset the LEDs based on the last invalid scan time
+                if last_invalid_scan_time and (time.time() - last_invalid_scan_time > 10):
+                    # It's been more than 10 seconds since the last invalid scan, reset LEDs
+                    turn_off_led(GREEN_LED_PIN)
+                    turn_off_led(RED_LED_PIN)
+                    last_invalid_scan_time = None  # Reset the invalid scan tracker
+                # If no need to reset LEDs yet, do not turn them off immediately
+
+            time.sleep(1)  # Short delay to debounce and manage rapid tag presentations
+
         except Exception as e:
             logger.error(f"An error occurred while reading RFID: {e}")
+
 
     def close(self):
         GPIO.cleanup()
 
 # Helper Functions
 def turn_on_led(pin):
+    logger.info(f"Turning on LED on pin {pin}")
     GPIO.output(pin, GPIO.HIGH)
 
 def turn_off_led(pin):
+    logger.info(f"Turning off LED on pin {pin}")
     GPIO.output(pin, GPIO.LOW)
 
 def signal_handler(sig, frame):
