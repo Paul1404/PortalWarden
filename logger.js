@@ -36,17 +36,15 @@ function createLogger(modulePath) {
     );
   
     // Create and return the logger
-    const logger = winston.createLogger({
-      level: 'info',
-      format: fileFormat,
-      transports: [
-        new winston.transports.Console({ format: consoleFormat }),
-        new winston.transports.File({ filename: path.join(logsDir, 'error.log'), level: 'error' }),
-        new winston.transports.File({ filename: path.join(logsDir, 'combined.log') }),
-      ],
+    return winston.createLogger({
+        level: 'info',
+        format: fileFormat,
+        transports: [
+            new winston.transports.Console({format: consoleFormat}),
+            new winston.transports.File({filename: path.join(logsDir, 'error.log'), level: 'error'}),
+            new winston.transports.File({filename: path.join(logsDir, 'combined.log')}),
+        ],
     });
-  
-    return logger;
   }
 
 module.exports = createLogger;
