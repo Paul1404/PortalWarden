@@ -22,9 +22,9 @@ const logger = createLogger(__filename);
 // Update the file paths to point to the ssl directory
 const privateKey = fs.readFileSync(path.join(__dirname, 'ssl', 'key.pem'), 'utf8');
 const certificate = fs.readFileSync(path.join(__dirname, 'ssl', 'cert.pem'), 'utf8');
-const credentials = { key: privateKey, cert: certificate };
+const credentials = {key: privateKey, cert: certificate};
 
-app.use(express.urlencoded({ extended: true }));
+app.use(express.urlencoded({extended: true}));
 app.use(cors());
 app.use(express.json());
 
@@ -41,7 +41,7 @@ async function ensureEnvSecret() {
 
     if (!process.env.SESSION_SECRET) {
         logger.info('Generating a new SESSION_SECRET...');
-        const secretKey = await argon2.hash('some_random_string', { type: argon2.argon2id });
+        const secretKey = await argon2.hash('some_random_string', {type: argon2.argon2id});
         fs.appendFileSync(envFile, `SESSION_SECRET=${secretKey}\n`);
         // Reload .env file after updating it
         require('dotenv').config();
@@ -53,10 +53,16 @@ app.use(expressSession({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: true, httpOnly: true }
+    cookie: {secure: true, httpOnly: true} // secure:true is recommended for HTTPS connections
 }));
 
+
 passport.use(new LocalStrategy(
+    {
+        usernameField: 'username',
+        passwordField: 'password',
+        session: true
+    },
     async (username, password, done) => {
         try {
             logger.info(`Attempting to authenticate user: ${username}`);
@@ -64,26 +70,35 @@ passport.use(new LocalStrategy(
 
             if (!user) {
                 logger.info('Authentication failed: User not found');
-                return done(null, false, { message: 'Incorrect username or password.' });
+                // It's best practice to use the same error message for both username and password to prevent user enumeration
+                return done(null, false, {message: 'Incorrect username or password.'});
             }
 
             const isMatch = await db.verifyUserPassword(username, password);
             if (isMatch) {
                 logger.info('Authentication successful');
-                return done(null, user);
+
+                // Create a new object that omits the password before passing to done to enhance security
+                const safeUser = {
+                    id: user.id,
+                    username: user.username
+                };
+
+                return done(null, safeUser); // Pass the safe user object instead of the full user record
             } else {
                 logger.info('Authentication failed: Incorrect password');
-                return done(null, false, { message: 'Incorrect username or password.' });
+                return done(null, false, {message: 'Incorrect username or password.'});
             }
         } catch (error) {
             logger.error(`Authentication error: ${error}`);
-            return done(error);
+            // Return a generic error message to avoid exposing details of the error
+            return done(null, false, {message: 'An error occurred during authentication.'});
         }
     }
 ));
 
 app.use(passport.initialize());
-app.use(passport.session());
+app.use(passport.session(undefined));
 
 passport.serializeUser((user, done) => {
     done(null, user.id);
@@ -126,11 +141,11 @@ app.post('/login', (req, res, next) => {
     })(req, res, next);
 });
 
-app.get('/logout', (req, res) => {
+app.get('/logout', (req, res, next) => {
     const username = req.user ? req.user.username : 'Unknown';
     logger.info(`User logged out: ${username}`);
 
-    req.logout(function(err) {
+    req.logout(function (err) {
         if (err) {
             logger.error('Error during logout:', err);
             return next(err);
@@ -138,6 +153,7 @@ app.get('/logout', (req, res) => {
         res.redirect('/login');
     });
 });
+
 
 function ensureAuthenticated(req, res, next) {
     logger.info(`Attempting to access: ${req.originalUrl}`);
@@ -169,7 +185,7 @@ app.get('/users', ensureAuthenticated, async (req, res) => {
         res.json(users);
     } catch (err) {
         logger.error("Error retrieving users:", err);
-        res.status(500).json({ error: `Error retrieving users: ${err.message}` });
+        res.status(500).json({error: `Error retrieving users: ${err.message}`});
     }
 });
 
@@ -180,7 +196,7 @@ app.get('/rfid-tags', ensureAuthenticated, async (req, res) => {
         res.json(tags);
     } catch (err) {
         logger.error("Error retrieving RFID tags:", err);
-        res.status(500).json({ error: `Error retrieving RFID tags: ${err.message}` });
+        res.status(500).json({error: `Error retrieving RFID tags: ${err.message}`});
     }
 });
 
@@ -199,7 +215,7 @@ app.delete('/remove-rfid/:tagUid', ensureAuthenticated, async (req, res) => {
 });
 
 app.post('/add-user', ensureAuthenticated, async (req, res) => {
-    const { username, password } = req.body;
+    const {username, password} = req.body;
     logger.info(`Received request to add user: ${username}`);
 
     try {
@@ -213,7 +229,7 @@ app.post('/add-user', ensureAuthenticated, async (req, res) => {
 });
 
 app.delete('/remove-user/:username', ensureAuthenticated, async (req, res) => {
-    const { username } = req.params;
+    const {username} = req.params;
     logger.info(`Received request to remove user: ${username}`);
 
     try {
@@ -232,7 +248,7 @@ app.get('/rfid-logs', ensureAuthenticated, async (req, res) => {
         res.json(logEntries);
     } catch (err) {
         logger.error("Error retrieving RFID log entries:", err);
-        res.status(500).json({ error: `Error retrieving RFID log entries: ${err.message}` });
+        res.status(500).json({error: `Error retrieving RFID log entries: ${err.message}`});
     }
 });
 
@@ -285,4 +301,8 @@ async function main() {
     }
 }
 
-main();
+main().catch(error => {
+    logger.error('Unhandled error in main:', error);
+    process.exit(1);
+});
+
