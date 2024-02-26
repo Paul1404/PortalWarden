@@ -1,27 +1,50 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/style-login.css">
-</head>
-<body>
-    <div class="login-container">
-        <img src="/android-chrome-512x512.png" alt="Login Image" class="login-image">
-        <h2 class="text-center custom-header">RFID-Door-Control-System Login</h2>
-        <form action="/login" method="post" autocomplete="on">
-            <div class="form-group">
-                <label for="username">Username:</label>
-                <input type="text" class="form-control" id="username" name="username" required autocomplete="username">
-            </div>
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password">
-            </div>
-            <button type="submit" class="btn btn-primary btn-block">Login</button>
-        </form>
-    </div>
-</body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Login</title>
+        <link
+            rel="stylesheet"
+            href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+        />
+        <link rel="stylesheet" href="/style-login.css" />
+    </head>
+    <body>
+        <div class="login-container">
+            <img
+                src="/android-chrome-512x512.png"
+                alt="Login Image"
+                class="login-image"
+            />
+            <h2 class="custom-header text-center">PortalWarden</h2>
+            <form action="/login" method="post" autocomplete="on">
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="username"
+                        name="username"
+                        required
+                        autocomplete="username"
+                    />
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input
+                        type="password"
+                        class="form-control"
+                        id="password"
+                        name="password"
+                        required
+                        autocomplete="current-password"
+                    />
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">
+                    Login
+                </button>
+            </form>
+        </div>
+    </body>
 </html>
