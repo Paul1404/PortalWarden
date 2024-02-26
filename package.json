@@ -10,7 +10,7 @@
     "setup": "npm install && prisma migrate deploy"
   },
   "dependencies": {
-    "@prisma/client": "^5.9.0",
+    "@prisma/client": "^5.10.2",
     "argon2": "^0.31.2",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
@@ -26,6 +26,6 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.3",
-    "prisma": "^5.9.0"
+    "prisma": "^5.10.2"
   }
 }

@@ -3,6 +3,8 @@ const argon2 = require('argon2');
 const createLogger = require('./logger');
 const logger = createLogger(__filename);
 
+require('dotenv').config();
+
 const prisma = new PrismaClient();
 
 /**
