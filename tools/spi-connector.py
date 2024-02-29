@@ -28,29 +28,21 @@ GPIO.setup(RED_LED_PIN, GPIO.OUT)
 
 def configure_logging():
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    log_directory = os.path.join(script_dir, "..", "logs", "spi-connector")
-    log_file = "rfid_reader.log"
-    full_log_path = os.path.join(log_directory, log_file)
-
+    log_directory = os.path.join(script_dir, "logs")
     if not os.path.exists(log_directory):
         os.makedirs(log_directory)
+    log_file = os.path.join(log_directory, "rfid_reader.log")
 
-    logger = logging.getLogger(__name__)
-    logger.setLevel(logging.INFO)
+    # Prepare the list of handlers conditionally
+    handlers = [RotatingFileHandler(log_file, maxBytes=5*1024*1024, backupCount=3)]
+    if config('LOG_TO_CONSOLE', default=False, cast=bool):
+        handlers.append(logging.StreamHandler())
 
-    # Setup log rotation: max 5 MB per file, keep 3 old logs
-    file_handler = RotatingFileHandler(full_log_path, maxBytes=5*1024*1024, backupCount=3)
-    file_handler.setLevel(logging.INFO)
-    file_handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(message)s'))
-    logger.addHandler(file_handler)
+    logging.basicConfig(level=logging.INFO,
+                        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                        handlers=handlers)
 
-    if config('LOG_TO_CONSOLE', default='False', cast=bool):
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.INFO)
-        console_handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(message)s'))
-        logger.addHandler(console_handler)
-
-    return logger
+    return logging.getLogger(__name__)
 
 logger = configure_logging()
 
@@ -144,6 +136,8 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
+    logger.info("Script start, entering main loop")  # Test log message
+
     reader = RFIDReader()
     try:
         while True:
@@ -152,3 +146,4 @@ if __name__ == "__main__":
         logger.info("RFID reading interrupted")
     finally:
         reader.close()
+
