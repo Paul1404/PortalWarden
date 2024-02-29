@@ -1,7 +1,10 @@
 datasource db {
-  provider = "postgres"
-  url      = "postgresql://admin:postgres12@localhost:5432/access-control"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+
 }
+
 
 generator client {
   provider = "prisma-client-js"
