@@ -6,10 +6,13 @@ const LocalStrategy = require('passport-local').Strategy;
 const expressSession = require('express-session');
 const Database = require('./db');
 const db = new Database();
-const fs = require('fs');
+const fs = require('fs'); // For sync operations
+const fsPromises = require('fs').promises; // For async operations
 const https = require('https');
 const argon2 = require('argon2');
-require('dotenv').config();
+const crypto = require('crypto');
+const dotenv = require('dotenv'); // Require the module for later use
+dotenv.config(); // Immediately invoke config to load the environment variables
 const readline = require('readline');
 let httpsServer; // Global variable to hold the HTTPS server instance
 
@@ -31,22 +34,35 @@ app.use(express.json());
 // Serve static files from the 'public' directory
 app.use(express.static('public'));
 
+// Ensure SESSION_SECRET exists
 async function ensureEnvSecret() {
-    const envFile = './.env';
+    const envFile = path.resolve(__dirname, '.env');
 
-    if (!fs.existsSync(envFile)) {
+    let needsReload = false;
+    try {
+        await fsPromises.access(envFile);
+    } catch {
         logger.info('.env file not found, creating...');
-        fs.writeFileSync(envFile, '');
+        await fsPromises.writeFile(envFile, '');
+        needsReload = true;
     }
 
     if (!process.env.SESSION_SECRET) {
         logger.info('Generating a new SESSION_SECRET...');
-        const secretKey = await argon2.hash('some_random_string', {type: argon2.argon2id});
-        fs.appendFileSync(envFile, `SESSION_SECRET=${secretKey}\n`);
-        // Reload .env file after updating it
-        require('dotenv').config();
-        process.env.SESSION_SECRET = secretKey;
+        const randomString = crypto.randomBytes(32).toString('hex');
+        const secretKey = await argon2.hash(randomString, { type: argon2.argon2id });
+        // Ensure there's a newline character before SESSION_SECRET
+        await fsPromises.appendFile(envFile, `\nSESSION_SECRET=${secretKey}`);
+        process.env.SESSION_SECRET = secretKey; // Set for immediate use without restart
+        needsReload = true;
+        logger.info('SESSION_SECRET generated and added to .env file.');
     }
+
+    if (needsReload) {
+        dotenv.config({ path: envFile }); // Reload environment variables if .env was updated
+    }
+
+    return process.env.SESSION_SECRET;
 }
 
 app.use(expressSession({
