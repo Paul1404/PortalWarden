@@ -1,6 +1,6 @@
 ![Screenshot of the Login Page of the Application](https://i.imgur.com/jqUFadm.png)
 
-# RPI-RFID-Door-Control Setup Guide 🚪🔑
+# PortalWarden 🚪🔑
 
 Welcome to the RPI-RFID-Door-Control repository! This guide will walk you through the steps needed to get the service up and running on your machine. 🚀
 
@@ -67,7 +67,7 @@ npm run web
 Once the service is running, it will be accessible via:
 
 ```arduino
-http://<your-ip-address>:3000
+https://<your-ip-address>:3000
 ```
 
 Replace `<your-ip-address>` with the IP address of the machine where the service is installed.
