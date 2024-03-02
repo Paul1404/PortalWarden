@@ -30,3 +30,9 @@ model RfidLog {
   timestamp DateTime @default(now())
 }
 
+model LogEntry {
+  id        Int      @id @default(autoincrement())
+  level     String
+  message   String
+  timestamp DateTime @default(now())
+}
