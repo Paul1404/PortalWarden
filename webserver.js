@@ -22,6 +22,7 @@ const port = 3000;
 const createLogger = require('./logger');
 const logger = createLogger(__filename);
 
+
 // Update the file paths to point to the ssl directory
 const privateKey = fs.readFileSync(path.join(__dirname, 'ssl', 'key.pem'), 'utf8');
 const certificate = fs.readFileSync(path.join(__dirname, 'ssl', 'cert.pem'), 'utf8');
@@ -34,36 +35,6 @@ app.use(express.json());
 // Serve static files from the 'public' directory
 app.use(express.static('public'));
 
-// Ensure SESSION_SECRET exists
-async function ensureEnvSecret() {
-    const envFile = path.resolve(__dirname, '.env');
-
-    let needsReload = false;
-    try {
-        await fsPromises.access(envFile);
-    } catch {
-        logger.info('.env file not found, creating...');
-        await fsPromises.writeFile(envFile, '');
-        needsReload = true;
-    }
-
-    if (!process.env.SESSION_SECRET) {
-        logger.info('Generating a new SESSION_SECRET...');
-        const randomString = crypto.randomBytes(32).toString('hex');
-        const secretKey = await argon2.hash(randomString, { type: argon2.argon2id });
-        // Ensure there's a newline character before SESSION_SECRET
-        await fsPromises.appendFile(envFile, `\nSESSION_SECRET=${secretKey}`);
-        process.env.SESSION_SECRET = secretKey; // Set for immediate use without restart
-        needsReload = true;
-        logger.info('SESSION_SECRET generated and added to .env file.');
-    }
-
-    if (needsReload) {
-        dotenv.config({ path: envFile }); // Reload environment variables if .env was updated
-    }
-
-    return process.env.SESSION_SECRET;
-}
 
 app.use(expressSession({
     secret: process.env.SESSION_SECRET,
@@ -129,48 +100,6 @@ passport.deserializeUser(async (id, done) => {
     }
 });
 
-app.get('/UI-Background.jpg', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'UI-Background.jpg'));
-});
-
-app.get('/style.css', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'style.css'));
-});
-
-app.get('/site.webmanifest', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'site.webmanifest'));
-});
-
-app.get('/', ensureAuthenticated, (req, res) => {
-    res.sendFile(path.join(__dirname, 'private', 'index.html'));
-});
-
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
-
-app.post('/login', (req, res, next) => {
-    passport.authenticate('local', {
-        successRedirect: '/',
-        failureRedirect: '/login',
-        failureFlash: false
-    })(req, res, next);
-});
-
-app.get('/logout', (req, res, next) => {
-    const username = req.user ? req.user.username : 'Unknown';
-    logger.info(`User logged out: ${username}`);
-
-    req.logout(function (err) {
-        if (err) {
-            logger.error('Error during logout:', err);
-            return next(err);
-        }
-        res.redirect('/login');
-    });
-});
-
-
 function ensureAuthenticated(req, res, next) {
     logger.info(`Attempting to access: ${req.originalUrl}`);
     if (req.isAuthenticated()) {
@@ -180,93 +109,9 @@ function ensureAuthenticated(req, res, next) {
     res.redirect('/login');
 }
 
-app.post('/add-rfid', ensureAuthenticated, async (req, res) => {
-    const tagUid = req.body.tagUid;
-    const targetUsername = req.body.username;
+const routes = require('./routes')({ db, logger, ensureAuthenticated });
 
-    try {
-        await db.insertRfidTag(tagUid, targetUsername);
-        logger.info(`RFID tag added successfully for user ${targetUsername}`);
-        res.status(200).send(`RFID tag added successfully.`);
-    } catch (error) {
-        logger.error(`Error adding RFID tag: ${error.message}`);
-        res.status(500).send(`Error adding RFID tag: ${error.message}`);
-    }
-});
-
-app.get('/users', ensureAuthenticated, async (req, res) => {
-    try {
-        const users = await db.getUsers();
-        logger.info("Users fetched:", users);
-        res.json(users);
-    } catch (err) {
-        logger.error("Error retrieving users:", err);
-        res.status(500).json({error: `Error retrieving users: ${err.message}`});
-    }
-});
-
-app.get('/rfid-tags', ensureAuthenticated, async (req, res) => {
-    try {
-        const tags = await db.getRfidTags();
-        logger.info("RFID tags fetched:", tags);
-        res.json(tags);
-    } catch (err) {
-        logger.error("Error retrieving RFID tags:", err);
-        res.status(500).json({error: `Error retrieving RFID tags: ${err.message}`});
-    }
-});
-
-app.delete('/remove-rfid/:tagUid', ensureAuthenticated, async (req, res) => {
-    const tagUid = req.params.tagUid;
-    logger.info(`Initiating removal of an RFID tag.`);
-
-    try {
-        await db.removeRfidTag(tagUid);
-        logger.info(`RFID tag removed successfully`);
-        res.status(200).send(`RFID tag removed successfully.`);
-    } catch (error) {
-        logger.error(`Error removing RFID tag: ${error.message}`);
-        res.status(500).send(`Error removing RFID tag: ${error.message}`);
-    }
-});
-
-app.post('/add-user', ensureAuthenticated, async (req, res) => {
-    const {username, password} = req.body;
-    logger.info(`Received request to add user: ${username}`);
-
-    try {
-        await db.addUser(username, password);
-        logger.info(`User ${username} added successfully.`);
-        res.status(200).send(`User ${username} added successfully.`);
-    } catch (error) {
-        logger.error(`Error adding user ${username}: ${error.message}`);
-        res.status(500).send(`Error adding user: ${error.message}`);
-    }
-});
-
-app.delete('/remove-user/:username', ensureAuthenticated, async (req, res) => {
-    const {username} = req.params;
-    logger.info(`Received request to remove user: ${username}`);
-
-    try {
-        await db.removeUser(username);
-        logger.info(`User ${username} removed successfully.`);
-        res.status(200).send(`User ${username} removed successfully.`);
-    } catch (error) {
-        logger.error(`Error removing user ${username}: ${error.message}`);
-        res.status(500).send(`Error removing user: ${error.message}`);
-    }
-});
-
-app.get('/rfid-logs', ensureAuthenticated, async (req, res) => {
-    try {
-        const logEntries = await db.getRfidLogEntries();
-        res.json(logEntries);
-    } catch (err) {
-        logger.error("Error retrieving RFID log entries:", err);
-        res.status(500).json({error: `Error retrieving RFID log entries: ${err.message}`});
-    }
-});
+app.use('/', routes);
 
 function setupKeypressListener(db, server) {
     if (process.stdin.isTTY) {
@@ -304,7 +149,6 @@ function setupKeypressListener(db, server) {
 
 async function main() {
     try {
-        await ensureEnvSecret();
         httpsServer = https.createServer(credentials, app); // Store the server instance in the global variable
         httpsServer.listen(port, () => {
             logger.info(`HTTPS Server running on https://localhost:${port}`);
@@ -321,4 +165,3 @@ main().catch(error => {
     logger.error('Unhandled error in main:', error);
     process.exit(1);
 });
-
