@@ -1,6 +1,8 @@
 const express = require('express');
 const passport = require('passport');
 const path = require('path');
+const { prisma } = require('./db.js');
+
 
 module.exports = function({ db, logger, ensureAuthenticated }) {
     const router = express.Router();
@@ -111,6 +113,21 @@ module.exports = function({ db, logger, ensureAuthenticated }) {
             res.status(500).send(`Error removing user: ${error.message}`);
         }
     });
+
+    router.get('/log-explorer', ensureAuthenticated, (req, res) => {
+        res.sendFile(path.join(__dirname, 'private', 'log-explorer.html'));
+    });
+
+    router.get('/api/logs', ensureAuthenticated, async (req, res) => {
+        try {
+            const data = await db.getLogEntries();
+            res.json({ data });
+        } catch (error) {
+            console.error('Failed to fetch logs:', error);
+            res.status(500).send('Failed to fetch logs');
+        }
+    });
+
 
     router.get('/rfid-logs', ensureAuthenticated, async (req, res) => {
         try {

@@ -325,6 +325,47 @@ class Database {
         }
     }
 
+    /**
+ * Retrieves all log entries from the database.
+ *
+ * @returns {Promise<Array>} A list of log entry records.
+ * @throws {Error} If a database error occurs.
+ */
+async getLogEntries() {
+        try {
+            logger.info("Querying database for log entries...");
+            const logEntries = await prisma.logEntry.findMany({
+                orderBy: {
+                    timestamp: 'desc',
+                },
+                select: {
+                    id: true,
+                    level: true,
+                    message: true,
+                    timestamp: true,
+                }
+            });
+
+            // Format the timestamp for each log entry and rename it to 'date'
+            const formattedLogEntries = logEntries.map(entry => {
+                return {
+                    id: entry.id,
+                    level: entry.level,
+                    message: entry.message,
+                    date: this.formatDate(entry.timestamp) // Renaming 'timestamp' to 'date'
+                };
+            });
+
+            logger.info("Log entries retrieved:", formattedLogEntries);
+            return formattedLogEntries;
+        } catch (err) {
+            logger.error("Error querying log entries from database:", err);
+            throw err;
+        }
+    }
+    
+
+
     async disconnect() {
         await prisma.$disconnect();
     }

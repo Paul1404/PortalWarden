@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Log Explorer</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.3/css/jquery.dataTables.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.3/js/jquery.dataTables.min.js"></script>
+    <style>
+        body {
+            background-image: url('UI-Background.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            font-family: 'Arial', sans-serif;
+        }
+
+        /* Container styling */
+        .container {
+            margin: 20px;
+            padding: 20px;
+            border: 1px solid #ccc; /* Border color */
+            border-radius: 10px; /* Rounded corners */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Shadow */
+            background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent background */
+        }
+    </style>
+</head>
+    <body>
+    <div class="container">
+        <h2>Log Explorer</h2>
+        <table id="logTable" class="display">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Level</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#logTable').DataTable({
+                "ajax": "/api/logs",
+                "columns": [
+                    { "data": "date" },
+                    { "data": "level" },
+                    { "data": "message" }
+                ]
+            });
+        });
+    </script>
+</body>
+</html>
