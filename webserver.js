@@ -6,38 +6,31 @@ const LocalStrategy = require('passport-local').Strategy;
 const expressSession = require('express-session');
 const Database = require('./db');
 const db = new Database();
-const fs = require('fs'); // For sync operations
+const fs = require('fs');
 const https = require('https');
-const dotenv = require('dotenv'); // Require the module for later use
-dotenv.config(); // Immediately invoke config to load the environment variables
-const readline = require('readline');
-let httpsServer; // Global variable to hold the HTTPS server instance
+const dotenv = require('dotenv');
+dotenv.config();
 
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 const createLogger = require('./logger');
 const logger = createLogger(__filename);
 
-
-// Update the file paths to point to the ssl directory
 const privateKey = fs.readFileSync(path.join(__dirname, 'ssl', 'key.pem'), 'utf8');
 const certificate = fs.readFileSync(path.join(__dirname, 'ssl', 'cert.pem'), 'utf8');
-const credentials = {key: privateKey, cert: certificate};
+const credentials = { key: privateKey, cert: certificate };
 
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({ extended: true }));
 app.use(cors());
 app.use(express.json());
-
-// Serve static files from the 'public' directory
 app.use(express.static('public'));
-
 
 app.use(expressSession({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: {secure: true, httpOnly: true} // secure:true is recommended for HTTPS connections
+    cookie: { secure: true, httpOnly: true }
 }));
 
 
@@ -107,58 +100,47 @@ function ensureAuthenticated(req, res, next) {
 }
 
 const routes = require('./routes')({ db, logger, ensureAuthenticated });
-
 app.use('/', routes);
 
-function setupKeypressListener(db, server) {
-    if (process.stdin.isTTY) {
-        readline.emitKeypressEvents(process.stdin);
-        process.stdin.setRawMode(true);
+// Error handling for uncaught exceptions
+process.on('uncaughtException', (error) => {
+    logger.error(`Uncaught Exception: ${error}`);
+    process.exit(1);
+});
 
-        process.stdin.on('keypress', async (str, key) => {
-            if (key.ctrl && key.name === 'x') {
-                logger.info('Ctrl+X pressed. Initiating shutdown...');
+// Error handling for unhandled promise rejections
+process.on('unhandledRejection', (error) => {
+    logger.error(`Unhandled Rejection: ${error}`);
+    process.exit(1);
+});
 
-                // Close the HTTPS server
-                if (server) {
-                    server.close(() => {
-                        logger.info('HTTPS server closed.');
-                    });
-                }
-
-                // Disconnect from the database using the new method in the Database class
-                try {
-                    await db.disconnect();
-                    logger.info('Database connection closed.');
-                } catch (error) {
-                    logger.error('Error closing database connection:', error);
-                }
-
-                // Exit the process
-                process.exit(0);
-            }
-        });
-    } else {
-        logger.info('Running in a non-interactive environment. Keypress listener disabled.');
-    }
-}
-
-
-async function main() {
+async function startServer() {
     try {
-        httpsServer = https.createServer(credentials, app); // Store the server instance in the global variable
+        logger.info('Database connection established.');
+
+        // Start the HTTPS server
+        const httpsServer = https.createServer(credentials, app);
         httpsServer.listen(port, () => {
             logger.info(`HTTPS Server running on https://localhost:${port}`);
         });
 
-        setupKeypressListener(db, httpsServer); // Pass the server instance to the listener function
+        // Handle server errors
+        httpsServer.on('error', (error) => {
+            logger.error(`HTTPS Server error: ${error}`);
+            process.exit(1);
+        });
+
     } catch (error) {
-        logger.error('Failed to start the application:', error);
-        process.exit(1);
+        // Log any error that occurred during the startup process
+        logger.error(`Failed to start the server: ${error}`);
+        process.exit(1); // Exit the process if the server fails to start
     }
 }
 
-main().catch(error => {
-    logger.error('Unhandled error in main:', error);
+
+startServer().then(() => {
+    logger.info('Server started successfully.');
+}).catch(error => {
+    logger.error('Server failed to start:', error);
     process.exit(1);
 });

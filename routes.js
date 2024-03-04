@@ -52,7 +52,7 @@ module.exports = function({ db, logger, ensureAuthenticated }) {
     router.get('/users', ensureAuthenticated, async (req, res) => {
         try {
             const users = await db.getUsers();
-            logger.info("Users fetched", users);
+            logger.info("Users fetched for Dashboard table...", users);
             res.json(users);
         } catch (err) {
             logger.error("Error retrieving users:", err);
@@ -63,7 +63,7 @@ module.exports = function({ db, logger, ensureAuthenticated }) {
     router.get('/rfid-tags', ensureAuthenticated, async (req, res) => {
         try {
             const tags = await db.getRfidTags();
-            logger.info("RFID tags fetched", tags);
+            logger.info("RFID tags fetched for Dashboard table...", tags);
             res.json(tags);
         } catch (err) {
             logger.error("Error retrieving RFID tags:", err);
