@@ -28,7 +28,9 @@ GPIO.setup(RED_LED_PIN, GPIO.OUT)
 
 def configure_logging():
     script_dir = os.path.dirname(os.path.realpath(__file__))
-    log_directory = os.path.join(script_dir, "logs")
+    # Go one directory up from script_dir and then into the 'logs' directory
+    parent_dir = os.path.dirname(script_dir)
+    log_directory = os.path.join(parent_dir, "logs")
     if not os.path.exists(log_directory):
         os.makedirs(log_directory)
     log_file = os.path.join(log_directory, "rfid_reader.log")

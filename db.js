@@ -17,7 +17,7 @@ class Database {
      */
     constructor() {
         this.maxUsers = process.env.MAX_USERS || 5;
-        logger.info('Database initialized with Prisma');
+        logger.info(`Database operation: Initialized Database instance with Prisma ORM. Max users set to ${this.maxUsers}.`);
     }
 
     /**
@@ -30,6 +30,7 @@ class Database {
      */
     async insertRfidTag(tagUid, username) {
         try {
+            logger.info(`Database operation: Attempting to insert a new RFID tag for user '${username}'.`)
             const hashedTag = await argon2.hash(tagUid);
             const newTag = await prisma.validTag.create({
                 data: { 
@@ -39,7 +40,7 @@ class Database {
             });
             return newTag;
         } catch (err) {
-            logger.error(`Error inserting RFID tag: ${err.message}`);
+            logger.error(`Database operation error: Failed to insert RFID tag for user '${username}'. Error: ${err.message}`);
             throw err;
         }
     }
@@ -53,6 +54,7 @@ class Database {
      */
     async removeRfidTag(tagUid) {
         try {
+            logger.info(`Database operation: Attempting to remove RFID tag with UID '${tagUid}'.`)
             const tags = await prisma.validTag.findMany();
             const tagToDelete = tags.find(async t => await argon2.verify(t.tag, tagUid));
 
@@ -64,7 +66,7 @@ class Database {
                 throw new Error('RFID tag not found');
             }
         } catch (err) {
-            logger.error(`Error removing RFID tag: ${err.message}`);
+            logger.error(`Database operation error: Failed to remove RFID tag with UID '${tagUid}'. Error: ${err.message}`);
             throw err;
         }
     }
@@ -79,6 +81,7 @@ class Database {
      */
     async addUser(username, password) {
         try {
+            logger.info(`Database operation: Attempting to add a new user '${username}'.`)
             const existingUser = await prisma.user.findUnique({
                 where: { username }
             });
@@ -94,7 +97,7 @@ class Database {
 
             return newUser;
         } catch (err) {
-            logger.error(`Error adding user: ${err.message}`);
+            logger.error(`Database operation error: Failed to add user '${username}'. Error: ${err.message}`);
             throw err;
         }
     }
@@ -107,10 +110,11 @@ class Database {
      */
     async getUserCount() {
         try {
+            logger.info(`Database operation: Retrieving count of users in the database.`)
             const count = await prisma.user.count();
             return count;
         } catch (err) {
-            logger.error(`Error getting user count: ${err.message}`);
+            logger.error(`Database operation error: Failed to retrieve user count. Error: ${err.message}`);
             throw err;
         }
     }
@@ -124,12 +128,13 @@ class Database {
      */
     async getTag(tagUid) {
         try {
+            logger.info(`Database operation: Attempting to retrieve RFID tag with UID '${tagUid}'.`)
             const hashedTag = await argon2.hash(tagUid);
             const tags = await prisma.validTag.findMany();
             const tag = tags.find(t => argon2.verify(t.tag, hashedTag));
             return tag;
         } catch (err) {
-            logger.error(`Error retrieving tag: ${err.message}`);
+            logger.error(`Database operation error: Failed to retrieve RFID tag with UID '${tagUid}'. Error: ${err.message}`);
             throw err;
         }
     }
@@ -143,12 +148,13 @@ class Database {
      */
     async findUserByUsername(username) {
         try {
+            logger.info(`Database operation: Attempting to find user by username '${username}'.`)
             const user = await prisma.user.findUnique({
                 where: { username }
             });
             return user;
         } catch (err) {
-            logger.error(`Error finding user by username: ${err.message}`);
+            logger.error(`Database operation error: Failed to find user '${username}'. Error: ${err.message}`);
             throw err;
         }
     }
@@ -163,13 +169,14 @@ class Database {
      */
     async verifyUserPassword(username, password) {
         try {
+            logger.info(`Database operation: Verifying password for user '${username}'.`)
             const user = await this.findUserByUsername(username);
             if (user && await argon2.verify(user.password, password)) {
                 return true;
             }
             return false;
         } catch (err) {
-            logger.error(`Error verifying user password: ${err.message}`);
+            logger.error(`Database operation error: Password verification failed for user '${username}'. Error: ${err.message}`);
             throw err;
         }
     }
@@ -183,12 +190,13 @@ class Database {
      */
     async findUserById(id) {
         try {
+            logger.info(`Database operation: Attempting to find user by ID '${id}'.`)
             const user = await prisma.user.findUnique({
                 where: { id }
             });
             return user;
         } catch (err) {
-            logger.error(`Error finding user by ID: ${err.message}`);
+            logger.error(`Database operation error: Failed to find user with ID '${id}'. Error: ${err.message}`);
             throw err;
         }
     }
@@ -201,6 +209,7 @@ class Database {
      */
     async removeUser(username) {
         try {
+            logger.info(`Database operation: Attempting to remove user '${username}'.`)
             const user = await prisma.user.findUnique({
                 where: { username }
             });
@@ -213,9 +222,9 @@ class Database {
                 where: { id: user.id }
             });
 
-            logger.info(`User ${username} removed successfully`);
+            logger.info(`Database operation error: User ${username} removed successfully`);
         } catch (err) {
-            logger.error(`Error removing user: ${err.message}`);
+            logger.error(`Database operation error: Failed to remove user '${username}'. Error: ${err.message}`);
             throw err;
         }
     }
@@ -228,7 +237,7 @@ class Database {
      */
     async getUsers() {
         try {
-            logger.info("Querying database for users...");
+            logger.info(`Database operation: Querying database for list of users.`);
             const users = await prisma.user.findMany({
                 select: {
                     username: true,
@@ -243,11 +252,10 @@ class Database {
                     createdAt: this.formatDate(user.createdAt)
                 };
             });
-    
-            logger.info("Users retrieved:", formattedUsers);
+
             return formattedUsers;
         } catch (err) {
-            logger.error("Error querying users from database:", err);
+            logger.error(`Database operation error: Failed to query users from database. Error: ${err.message}`, err);
             throw err;
         }
     }
@@ -278,12 +286,11 @@ class Database {
      */
     async getRfidTags() {
         try {
-            logger.info("Querying database for RFID tags...");
+            logger.info(`Database operation: Querying database for list of RFID tags.`);
             const tags = await prisma.validTag.findMany();
-            logger.info("RFID tags retrieved:", tags);
             return tags;
         } catch (err) {
-            logger.error("Error querying RFID tags from database:", err);
+            logger.error(`Database operation error: Failed to query RFID tags from database. Error: ${err.message}`, err);
             throw err;
         }
     }
@@ -296,7 +303,7 @@ class Database {
      */
     async getRfidLogEntries() {
         try {
-            logger.info("Querying database for RFID log entries...");
+            logger.info(`Database operation: Querying database for RFID log entries.`);
             const logEntries = await prisma.rfidLog.findMany({
                 orderBy: {
                     timestamp: 'desc', // Assuming you might want to order by timestamp descending
@@ -317,10 +324,9 @@ class Database {
                 };
             });
 
-            logger.info("RFID log entries retrieved:", formattedLogEntries);
             return formattedLogEntries;
         } catch (err) {
-            logger.error("Error querying RFID log entries from database:", err);
+            logger.error(`Database operation error: Failed to query RFID log entries from database. Error: ${err.message}`, err);
             throw err;
         }
     }
@@ -333,7 +339,7 @@ class Database {
  */
 async getLogEntries() {
         try {
-            logger.info("Querying database for log entries...");
+            logger.info(`Database operation: Querying database for log entries.`);
             const logEntries = await prisma.logEntry.findMany({
                 orderBy: {
                     timestamp: 'desc',
@@ -356,10 +362,9 @@ async getLogEntries() {
                 };
             });
 
-            logger.info("Log entries retrieved:", formattedLogEntries);
             return formattedLogEntries;
         } catch (err) {
-            logger.error("Error querying log entries from database:", err);
+            logger.error(`Database operation error: Failed to query log entries from database. Error: ${err.message}`, err);
             throw err;
         }
     }

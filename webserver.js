@@ -42,18 +42,18 @@ passport.use(new LocalStrategy(
     },
     async (username, password, done) => {
         try {
-            logger.info(`Attempting to authenticate user: ${username}`);
+            logger.info(`Authentication attempt for user: '${username}' initiated.`);
             const user = await db.findUserByUsername(username);
 
             if (!user) {
-                logger.info('Authentication failed: User not found');
+                logger.info(`Authentication failure: No user matching username: '${username}' found. Check username and try again.`);
                 // It's best practice to use the same error message for both username and password to prevent user enumeration
                 return done(null, false, {message: 'Incorrect username or password.'});
             }
 
             const isMatch = await db.verifyUserPassword(username, password);
             if (isMatch) {
-                logger.info('Authentication successful');
+                logger.info(`Authentication success: User '${username}' successfully authenticated.`);
 
                 // Create a new object that omits the password before passing to done to enhance security
                 const safeUser = {
@@ -63,11 +63,11 @@ passport.use(new LocalStrategy(
 
                 return done(null, safeUser); // Pass the safe user object instead of the full user record
             } else {
-                logger.info('Authentication failed: Incorrect password');
+                logger.info(`Authentication failure: Incorrect password for user '${username}'. Ensure credentials are correct.`);
                 return done(null, false, {message: 'Incorrect username or password.'});
             }
         } catch (error) {
-            logger.error(`Authentication error: ${error}`);
+            logger.error(`Authentication error: An unexpected issue occurred during user '${username}' authentication. Error details: ${error}.`);
             // Return a generic error message to avoid exposing details of the error
             return done(null, false, {message: 'An error occurred during authentication.'});
         }
@@ -91,48 +91,54 @@ passport.deserializeUser(async (id, done) => {
 });
 
 function ensureAuthenticated(req, res, next) {
-    logger.info(`Attempting to access: ${req.originalUrl}`);
+    // Improved to include the HTTP method and client IP address for better context.
+    logger.info(`Access attempt: ${req.method} request to '${req.originalUrl}' from IP '${req.ip}'. Authentication check initiated.`);
+
     if (req.isAuthenticated()) {
+        // Logging success with additional context for auditing purposes.
+        logger.info(`Access granted: Authenticated user with IP '${req.ip}' successfully accessed '${req.originalUrl}'.`);
         return next();
     }
-    logger.info('Access denied: User not authenticated');
+
+    // Providing detailed reason for access denial to help in identifying potential security issues or misconfigurations.
+    logger.info(`Access denied: Unauthenticated request from IP '${req.ip}' for '${req.originalUrl}'. Redirecting to login.`);
     res.redirect('/login');
 }
+
 
 const routes = require('./routes')({ db, logger, ensureAuthenticated });
 app.use('/', routes);
 
 // Error handling for uncaught exceptions
 process.on('uncaughtException', (error) => {
-    logger.error(`Uncaught Exception: ${error}`);
+    logger.error(`Critical: Uncaught exception encountered. Application will terminate. Error details: ${error}.`);
     process.exit(1);
 });
 
 // Error handling for unhandled promise rejections
 process.on('unhandledRejection', (error) => {
-    logger.error(`Unhandled Rejection: ${error}`);
+    logger.error(`Critical: Unhandled promise rejection detected. Application will terminate. Error details: ${error}.`);
     process.exit(1);
 });
 
 async function startServer() {
     try {
-        logger.info('Database connection established.');
-
+        logger.info('Database connection: Successfull Sync with the Prisma ORM');
         // Start the HTTPS server
         const httpsServer = https.createServer(credentials, app);
         httpsServer.listen(port, () => {
-            logger.info(`HTTPS Server running on https://localhost:${port}`);
+            logger.info(`Server startup: HTTPS server is now running at https://localhost:${port}. Awaiting incoming connections.`);
         });
 
         // Handle server errors
         httpsServer.on('error', (error) => {
-            logger.error(`HTTPS Server error: ${error}`);
+            logger.error(`Server error: Encountered an issue with the HTTPS server. Error details: ${error}. Application will terminate.`);
             process.exit(1);
         });
 
     } catch (error) {
         // Log any error that occurred during the startup process
-        logger.error(`Failed to start the server: ${error}`);
+        logger.error(`Startup failure: Server did not start due to an error. Error details: ${error}. Application will terminate.`);
         process.exit(1); // Exit the process if the server fails to start
     }
 }
