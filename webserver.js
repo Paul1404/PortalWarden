@@ -7,10 +7,7 @@ const expressSession = require('express-session');
 const Database = require('./db');
 const db = new Database();
 const fs = require('fs'); // For sync operations
-const fsPromises = require('fs').promises; // For async operations
 const https = require('https');
-const argon2 = require('argon2');
-const crypto = require('crypto');
 const dotenv = require('dotenv'); // Require the module for later use
 dotenv.config(); // Immediately invoke config to load the environment variables
 const readline = require('readline');

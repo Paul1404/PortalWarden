@@ -1,7 +1,6 @@
 const express = require('express');
 const passport = require('passport');
 const path = require('path');
-const { prisma } = require('./db.js');
 
 
 module.exports = function({ db, logger, ensureAuthenticated }) {
@@ -53,7 +52,7 @@ module.exports = function({ db, logger, ensureAuthenticated }) {
     router.get('/users', ensureAuthenticated, async (req, res) => {
         try {
             const users = await db.getUsers();
-            logger.info("Users fetched:", users);
+            logger.info("Users fetched", users);
             res.json(users);
         } catch (err) {
             logger.error("Error retrieving users:", err);
@@ -64,7 +63,7 @@ module.exports = function({ db, logger, ensureAuthenticated }) {
     router.get('/rfid-tags', ensureAuthenticated, async (req, res) => {
         try {
             const tags = await db.getRfidTags();
-            logger.info("RFID tags fetched:", tags);
+            logger.info("RFID tags fetched", tags);
             res.json(tags);
         } catch (err) {
             logger.error("Error retrieving RFID tags:", err);

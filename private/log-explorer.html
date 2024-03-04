@@ -14,6 +14,27 @@
             font-family: 'Arial', sans-serif;
         }
 
+        /* New styles for the back button */
+        .back-button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 5px;
+            text-decoration: none;
+            color: white;
+            background-color: #007bff; /* Bootstrap primary color */
+            border: none;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: absolute;
+            top: 10px;
+            right: 17px;
+            cursor: pointer;
+        }
+
+        .back-button:hover {
+            background-color: #0056b3; /* Darker shade for hover effect */
+        }
+
         /* Container styling */
         .container {
             margin: 20px;
@@ -26,6 +47,11 @@
     </style>
 </head>
     <body>
+
+    <!-- Back to Dashboard Button -->
+        <button onclick="window.location.href='/'" class="back-button">Back to Dashboard</button>
+
+
     <div class="container">
         <h2>Log Explorer</h2>
         <table id="logTable" class="display">

@@ -20,13 +20,25 @@ body {
     text-align: center; /* Centering header text */
 }
 
-.form-control, .btn {
+.form-control {
     margin-bottom: 15px; /* Uniform spacing */
-    border-radius: 5px; /* Slightly rounded edges for form elements and buttons */
+    border-radius: 5px; /* Slightly rounded edges for form elements */
 }
 
+/* Button styles */
 .btn {
+    margin-bottom: 15px; /* Uniform spacing */
+    padding: 15px 40px; /* Consistent padding */
+    border-radius: 5px; /* Consistent rounded edges for buttons */
+    line-height: 1; /* Adjust line-height to ensure vertical alignment is the same */
+    display: inline-block; /* Ensures that both elements are treated as inline-block */
+    vertical-align: middle; /* Aligns elements to the middle vertically */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05); /* Subtle shadow for buttons */
+    font-size: 16px; /* Ensure font-size is the same */
+    text-decoration: none; /* Removes underline from <a> element */
+    border: none; /* Remove border */
+    outline: none; /* Remove outline */
+    cursor: pointer; /* Set cursor to pointer */
 }
 
 .login-image {
@@ -47,10 +59,10 @@ body {
 .logout-container {
     position: absolute;
     right: 10px;
-}
-
-.logout-button {
-    padding: 15px 40px;
+    top: 10px; /* Adjust the top position as needed */
+    display: flex; /* Use flexbox for alignment */
+    align-items: center; /* Center align the flex items vertically */
+    gap: 10px; /* Space between buttons */
 }
 
 /* Style for table containers */
@@ -75,4 +87,3 @@ body {
 .table-responsive {
     overflow-x: auto; /* Allows horizontal scrolling */
 }
-
