@@ -177,4 +177,12 @@ async function main() {
 }
 
 
-main();
+(async () => {
+    try {
+        await main();
+        console.log('Application started successfully.');
+    } catch (error) {
+        console.error('Failed to start the application:', error);
+        process.exit(1);
+    }
+})();
