@@ -128,7 +128,7 @@ if __name__ == "__main__":
     setup_leds()
 
     dsn = config('DATABASE_URL',
-                 default='postgres://Paul1404:Qvl54obXRZnA@neon.psedge.global/prisma_migrate_shadow_db_d87ccb0c-7694-4317-b6ce-7338af2cd730?application_name=9968ffcd-d4da-457a-a68b-9fbf293fae68&channel_binding=disable')
+                 default='CHANGEME')
     db_manager = DatabaseManager(dsn)
     reader = RFIDReader(db_manager)
 
