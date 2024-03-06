@@ -1,8 +1,8 @@
-const { PrismaClient } = require('@prisma/client');
+const {PrismaClient} = require('@prisma/client');
 const argon2 = require('argon2');
 const createLogger = require('./logger');
 const logger = createLogger(__filename);
-
+const crypto = require('crypto');
 require('dotenv').config();
 
 const prisma = new PrismaClient();
@@ -20,22 +20,14 @@ class Database {
         logger.info(`Database operation: Initialized Database instance with Prisma ORM. Max users set to ${this.maxUsers}.`);
     }
 
-    /**
-     * Inserts an RFID tag into the database after hashing it.
-     * 
-     * @param {string} tagUid - The unique identifier of the RFID tag.
-     * @param {string} username - The username associated with the RFID tag.
-     * @returns {Promise<Object>} The newly created RFID tag record.
-     * @throws {Error} If an error occurs during the database operation.
-     */
     async insertRfidTag(tagUid, username) {
         try {
-            logger.info(`Database operation: Attempting to insert a new RFID tag for user '${username}'.`)
-            const hashedTag = await argon2.hash(tagUid);
+            // Hash the RFID tag UID with SHA-256
+            const hash = crypto.createHash('sha256').update(tagUid).digest('hex');
             const newTag = await prisma.validTag.create({
-                data: { 
-                    tag: hashedTag,
-                    username: username // Add the username field
+                data: {
+                    tag: hash,
+                    username: username
                 }
             });
             return newTag;
@@ -44,11 +36,10 @@ class Database {
             throw err;
         }
     }
-    
 
     /**
      * Removes an RFID tag from the database.
-     * 
+     *
      * @param {string} tagUid - The unique identifier of the RFID tag to be removed.
      * @throws {Error} If the tag is not found or a database error occurs.
      */
@@ -60,7 +51,7 @@ class Database {
 
             if (tagToDelete) {
                 await prisma.validTag.delete({
-                    where: { id: tagToDelete.id } // Assuming 'id' is the primary key of the tag record
+                    where: {id: tagToDelete.id} // Assuming 'id' is the primary key of the tag record
                 });
             } else {
                 throw new Error('RFID tag not found');
@@ -73,7 +64,7 @@ class Database {
 
     /**
      * Adds a new user to the database after hashing their password.
-     * 
+     *
      * @param {string} username - The username for the new user.
      * @param {string} password - The password for the new user.
      * @returns {Promise<Object>} The newly created user record.
@@ -83,7 +74,7 @@ class Database {
         try {
             logger.info(`Database operation: Attempting to add a new user '${username}'.`)
             const existingUser = await prisma.user.findUnique({
-                where: { username }
+                where: {username}
             });
 
             if (existingUser) {
@@ -92,7 +83,7 @@ class Database {
 
             const hashedPassword = await argon2.hash(password);
             const newUser = await prisma.user.create({
-                data: { username, password: hashedPassword }
+                data: {username, password: hashedPassword}
             });
 
             return newUser;
@@ -104,7 +95,7 @@ class Database {
 
     /**
      * Counts the number of users in the database.
-     * 
+     *
      * @returns {Promise<number>} The count of users in the database.
      * @throws {Error} If a database error occurs.
      */
@@ -121,7 +112,7 @@ class Database {
 
     /**
      * Retrieves an RFID tag from the database based on its UID.
-     * 
+     *
      * @param {string} tagUid - The unique identifier of the RFID tag.
      * @returns {Promise<Object|null>} The RFID tag record if found, otherwise null.
      * @throws {Error} If a database error occurs.
@@ -141,7 +132,7 @@ class Database {
 
     /**
      * Finds a user by their username.
-     * 
+     *
      * @param {string} username - The username of the user to find.
      * @returns {Promise<Object|null>} The user record if found, otherwise null.
      * @throws {Error} If a database error occurs.
@@ -150,7 +141,7 @@ class Database {
         try {
             logger.info(`Database operation: Attempting to find user by username '${username}'.`)
             const user = await prisma.user.findUnique({
-                where: { username }
+                where: {username}
             });
             return user;
         } catch (err) {
@@ -161,7 +152,7 @@ class Database {
 
     /**
      * Verifies if the provided password matches the stored hash for a given user.
-     * 
+     *
      * @param {string} username - The username of the user.
      * @param {string} password - The password to verify.
      * @returns {Promise<boolean>} True if the password matches, otherwise false.
@@ -183,7 +174,7 @@ class Database {
 
     /**
      * Finds a user by their ID.
-     * 
+     *
      * @param {number} id - The ID of the user to find.
      * @returns {Promise<Object|null>} The user record if found, otherwise null.
      * @throws {Error} If a database error occurs.
@@ -192,7 +183,7 @@ class Database {
         try {
             logger.info(`Database operation: Attempting to find user by ID '${id}'.`)
             const user = await prisma.user.findUnique({
-                where: { id }
+                where: {id}
             });
             return user;
         } catch (err) {
@@ -203,7 +194,7 @@ class Database {
 
     /**
      * Removes a user from the database by their username.
-     * 
+     *
      * @param {string} username - The username of the user to remove.
      * @throws {Error} If the user is not found or a database error occurs.
      */
@@ -211,7 +202,7 @@ class Database {
         try {
             logger.info(`Database operation: Attempting to remove user '${username}'.`)
             const user = await prisma.user.findUnique({
-                where: { username }
+                where: {username}
             });
 
             if (!user) {
@@ -219,7 +210,7 @@ class Database {
             }
 
             await prisma.user.delete({
-                where: { id: user.id }
+                where: {id: user.id}
             });
 
             logger.info(`Database operation error: User ${username} removed successfully`);
@@ -231,7 +222,7 @@ class Database {
 
     /**
      * Retrieves all users from the database.
-     * 
+     *
      * @returns {Promise<Array>} A list of user records.
      * @throws {Error} If a database error occurs.
      */
@@ -244,7 +235,7 @@ class Database {
                     createdAt: true,
                 }
             });
-    
+
             // Format 'createdAt' for each user
             const formattedUsers = users.map(user => {
                 return {
@@ -253,34 +244,35 @@ class Database {
                 };
             });
 
+            logger.info("Users retrieved:", formattedUsers);
             return formattedUsers;
         } catch (err) {
             logger.error(`Database operation error: Failed to query users from database. Error: ${err.message}`, err);
             throw err;
         }
     }
-    
+
     /**
      * Formats a date to a more human-readable string.
-     * 
+     *
      * @param {Date} date - The date object to format.
      * @returns {string} A formatted date string.
      */
     formatDate(date) {
-        return date.toLocaleString('en-GB', { 
-            year: 'numeric', 
-            month: '2-digit', 
-            day: '2-digit', 
-            hour: '2-digit', 
-            minute: '2-digit', 
-            second: '2-digit' 
+        return date.toLocaleString('en-GB', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
         });
     }
-    
-    
+
+
     /**
      * Retrieves all RFID tags from the database.
-     * 
+     *
      * @returns {Promise<Array>} A list of RFID tag records.
      * @throws {Error} If a database error occurs.
      */
@@ -297,7 +289,7 @@ class Database {
 
     /**
      * Retrieves all RFID log entries from the database.
-     * 
+     *
      * @returns {Promise<Array>} A list of RFID log entry records.
      * @throws {Error} If a database error occurs.
      */
@@ -332,12 +324,12 @@ class Database {
     }
 
     /**
- * Retrieves all log entries from the database.
- *
- * @returns {Promise<Array>} A list of log entry records.
- * @throws {Error} If a database error occurs.
- */
-async getLogEntries() {
+     * Retrieves all log entries from the database.
+     *
+     * @returns {Promise<Array>} A list of log entry records.
+     * @throws {Error} If a database error occurs.
+     */
+    async getLogEntries() {
         try {
             logger.info(`Database operation: Querying database for log entries.`);
             const logEntries = await prisma.logEntry.findMany({
@@ -368,13 +360,12 @@ async getLogEntries() {
             throw err;
         }
     }
-    
 
 
     async disconnect() {
         await prisma.$disconnect();
     }
-    
+
 
 }
 

@@ -2,8 +2,8 @@ import RPi.GPIO as GPIO
 import time
 
 # Replace these with your specific GPIO pin numbers
-GREEN_LED_PIN = 3  # Example GPIO pin where your green LED is connected
-RED_LED_PIN = 2    # Example GPIO pin where your red LED is connected
+GREEN_LED_PIN = 2  # Example GPIO pin where your green LED is connected
+RED_LED_PIN = 3    # Example GPIO pin where your red LED is connected
 
 # Initialize GPIO settings
 GPIO.setmode(GPIO.BCM)
