@@ -1,14 +1,11 @@
 const winston = require('winston');
+const DailyRotateFile = require('winston-daily-rotate-file');
+const moment = require('moment-timezone');
 const path = require('path');
 const fs = require('fs');
-const moment = require('moment-timezone');
 const { PrismaClient } = require('@prisma/client');
-
 const prisma = new PrismaClient();
 
-/**
- * Custom Winston transport for logging to a Prisma-based database.
- */
 class PrismaTransport extends winston.Transport {
   constructor(opts) {
     super(opts);
@@ -19,7 +16,7 @@ class PrismaTransport extends winston.Transport {
       this.emit('logged', info);
     });
 
-    // Adjust timestamp to  specific timezone, 'Europe/Berlin'
+    // Correctly convert and format the timestamp for the desired timezone
     const timestamp = moment().tz("Europe/Berlin").format();
 
     try {
@@ -27,7 +24,7 @@ class PrismaTransport extends winston.Transport {
         data: {
           level: info.level,
           message: info.message,
-          timestamp,
+          timestamp: new Date(timestamp),
         },
       });
       callback();
@@ -38,44 +35,49 @@ class PrismaTransport extends winston.Transport {
   }
 }
 
-/**
- * Creates a logger instance configured with console, file, and Prisma transports.
- * @param {string} modulePath Path to the module creating the logger.
- * @returns {winston.Logger} Configured Winston logger instance.
- */
 function createLogger(modulePath) {
   const scriptName = path.basename(modulePath);
-  const subDir = scriptName.replace(path.extname(scriptName), '');
+  const logsDir = path.join(__dirname, 'logs', scriptName.replace(path.extname(scriptName), ''));
 
-  const logsDir = path.join(__dirname, 'logs', subDir);
-  if (!fs.existsSync(logsDir)) {
+  if (!fs.existsSync(logsDir)){
     fs.mkdirSync(logsDir, { recursive: true });
   }
 
   const consoleFormat = winston.format.combine(
     winston.format.colorize(),
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
+    winston.format.printf(({ level, message }) => {
+      const timestamp = moment().tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');
+      return `${timestamp} ${level}: ${message}`;
+    })
   );
 
   const fileFormat = winston.format.combine(
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    winston.format.printf(info => `${info.timestamp} ${info.level}: ${info.message}`)
-    );
+    winston.format.printf(({ level, message }) => {
+      const timestamp = moment().tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');
+      return `${timestamp} ${level}: ${message}`;
+    })
+  );
 
-  // Adjust the logger level based on environment
-  const level = process.env.LOG_LEVEL || 'info';
-
-  return winston.createLogger({
-    level,
-    format: fileFormat,
+  const logger = winston.createLogger({
+    level: 'info',
     transports: [
-      new winston.transports.Console({ format: consoleFormat }),
-      new winston.transports.File({ filename: path.join(logsDir, 'error.log'), level: 'error' }),
-      new winston.transports.File({ filename: path.join(logsDir, 'combined.log') }),
-      new PrismaTransport(), // Add the custom Prisma transport
-      ],
+      new winston.transports.Console({
+        format: consoleFormat
+      }),
+      new DailyRotateFile({
+        filename: path.join(logsDir, 'application-%DATE%.log'),
+        datePattern: 'YYYY-MM-DD',
+        zippedArchive: true,
+        maxSize: '20m',
+        maxFiles: '14d',
+        level: 'info',
+        format: fileFormat, // Use non-colorized format for files
+      }),
+      new PrismaTransport(),
+    ],
   });
+
+  return logger;
 }
 
 module.exports = createLogger;
