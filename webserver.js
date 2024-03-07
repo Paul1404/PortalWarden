@@ -5,6 +5,7 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const expressSession = require('express-session');
 const Database = require('./db');
+const db = new Database();
 const fs = require('fs');
 const https = require('https');
 const dotenv = require('dotenv');
