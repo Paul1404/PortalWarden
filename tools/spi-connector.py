@@ -25,24 +25,25 @@ GPIO.setup(GREEN_LED_PIN, GPIO.OUT)
 GPIO.setup(RED_LED_PIN, GPIO.OUT)
 GPIO.output(RED_LED_PIN, GPIO.HIGH)  # Turn red LED on at script start
 
-# Setup for Servo Motor
-SERVO_PIN = 18  # Change to the GPIO pin connected to the servo
-GPIO.setup(SERVO_PIN, GPIO.OUT)
+# Initialize PWM for Servo Control
+servo = GPIO.PWM(SERVO_PIN, 50)  # 50Hz frequency
+servo.start(0)  # Initialization with 0 duty cycle
 
 
 def set_servo_angle(angle):
     duty = angle / 18 + 2
     servo.ChangeDutyCycle(duty)
     time.sleep(1)  # Allow time for the servo to move
-    servo.ChangeDutyCycle(0)  # Stop sending a signal to stabilize the servo
-
+    servo.ChangeDutyCycle(0)  # Stop sending a signal
 
 def lock_door():
-    set_servo_angle(0)  # Adjust angle for locked position
-
+    set_servo_angle(0)  # Adjust this angle to securely lock
+    logger.info("Door locked.")
 
 def unlock_door():
-    set_servo_angle(90)  # Adjust angle for unlocked position
+    set_servo_angle(90)  # Adjust this angle to unlock
+    logger.info("Door unlocked.")
+
 
 
 # Configure logging
@@ -115,7 +116,7 @@ class RFIDReader:
                 logger.info("RFID-Code valid: Unlocking Door...")
                 blink_led(GREEN_LED_PIN, duration=2)
                 unlock_door()
-                time.sleep(5)
+                time.sleep(5)  # Time delay to re-lock the door, adjust as needed for entry time
                 lock_door()
             else:
                 logger.info("RFID Code invalid")
@@ -123,29 +124,30 @@ class RFIDReader:
             time.sleep(1)  # Delay between reads
 
     def cleanup(self):
+        servo.stop()
         GPIO.cleanup()
 
 
-def blink_led(pin, duration=2, on_time=0.5, off_time=0.5):
-    end_time = time.time() + duration
-    while time.time() < end_time:
-        GPIO.output(pin, GPIO.HIGH)
-        time.sleep(on_time)
+    def blink_led(pin, duration=2, on_time=0.5, off_time=0.5):
+        end_time = time.time() + duration
+        while time.time() < end_time:
+            GPIO.output(pin, GPIO.HIGH)
+            time.sleep(on_time)
+            GPIO.output(pin, GPIO.LOW)
+            time.sleep(off_time)
+        # Ensure the LED is off after blinking
         GPIO.output(pin, GPIO.LOW)
-        time.sleep(off_time)
-    # Ensure the LED is off after blinking
-    GPIO.output(pin, GPIO.LOW)
+
+    
+    def setup_leds():
+        GPIO.output(RED_LED_PIN, GPIO.HIGH)  # Red LED on, indicating system is active
+        GPIO.output(GREEN_LED_PIN, GPIO.LOW)  # Ensure green LED is off
 
 
-def setup_leds():
-    GPIO.output(RED_LED_PIN, GPIO.HIGH)  # Red LED on, indicating system is active
-    GPIO.output(GREEN_LED_PIN, GPIO.LOW)  # Ensure green LED is off
-
-
-def signal_handler(sig, frame, reader):
-    reader.cleanup()
-    logger.info("Graceful shutdown initiated")
-    sys.exit(0)
+    def signal_handler(sig, frame, reader):
+        reader.cleanup()
+        logger.info("Graceful shutdown initiated")
+        sys.exit(0)
 
 
 if __name__ == "__main__":
