@@ -58,7 +58,7 @@ function createLogger(modulePath) {
     })
   );
 
-  const logger = winston.createLogger({
+  return winston.createLogger({
     level: 'info',
     transports: [
       new winston.transports.Console({
@@ -76,8 +76,6 @@ function createLogger(modulePath) {
       new PrismaTransport(),
     ],
   });
-
-  return logger;
 }
 
 module.exports = createLogger;

@@ -39,7 +39,7 @@ app.use(express.static('public'));
 // Initialize express-session to manage session state
 app.use(expressSession({
     secret: process.env.SESSION_SECRET, // Secret used to sign the session ID cookie
-    resave: false, // Avoid resaving session if it hasn't changed
+    resave: false, // Avoid saving session if it hasn't changed
     saveUninitialized: false, // Don't create a session until something is stored
     cookie: { secure: true, httpOnly: true } // Enhance cookie security
 }));

@@ -1,3 +1,5 @@
+// noinspection JSCheckFunctionSignatures
+
 const express = require('express');
 const passport = require('passport');
 const path = require('path');
@@ -11,7 +13,7 @@ const path = require('path');
  * @param {Object} config.db The database connection object.
  * @param {Object} config.logger The logging utility to record events.
  * @param {Function} config.ensureAuthenticated Middleware function to ensure a user is authenticated.
- * @returns {express.Router} A configured Express.js router with routes for the application.
+ * @returns {Router} A configured Express.js router with routes for the application.
  */
 module.exports = function({ db, logger, ensureAuthenticated }) {
     const router = express.Router();
