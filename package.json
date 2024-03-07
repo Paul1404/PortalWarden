@@ -6,7 +6,7 @@
   "scripts": {
     "web-dev": "nodemon",
     "web": "node webserver.js",
-    "detached": "pm2 start app.js --name rpi-rfid-door-control --detach",
+    "detached": "pm2 start app.js --name PortalWarden --detach",
     "setup": "npm install && prisma migrate deploy"
   },
   "dependencies": {
