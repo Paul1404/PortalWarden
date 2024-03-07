@@ -1,39 +1,42 @@
+// Define the database connection, using PostgreSQL as the provider.
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-
+// Configure the Prisma client generator.
 generator client {
   provider = "prisma-client-js"
 }
 
+// Represents a valid RFID tag in the system.
 model ValidTag {
-  id        Int      @id @default(autoincrement())
-  tag       String   @unique
-  timestamp DateTime @default(now())
-  username  String   // Assuming this is not unique and not optional
+  id        Int      @id @default(autoincrement()) // Unique identifier for each tag.
+  tag       String   @unique // The RFID tag value, unique across all tags.
+  timestamp DateTime @default(now()) // The time when the tag was added to the system.
+  username  String   // The username associated with the tag, not necessarily unique.
 }
 
+// Represents a user in the system.
 model User {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
-  password  String
-  createdAt DateTime @default(now()) // Creation timestamp for User
+  id        Int      @id @default(autoincrement()) // Unique identifier for each user.
+  username  String   @unique // The user's username, must be unique.
+  password  String   // The user's password (should be stored as a hash).
+  createdAt DateTime @default(now()) // The time when the user was created.
 }
 
+// Represents a log of RFID access attempts.
 model RfidLog {
-  id        Int      @id @default(autoincrement())
-  rfidId    BigInt
-  isValid   Boolean? // Note the '?' making it nullable
-  timestamp DateTime @default(now())
+  id        Int      @id @default(autoincrement()) // Unique identifier for each log entry.
+  rfidId    BigInt   // The RFID identifier that attempted access.
+  isValid   Boolean? // Indicates if the access attempt was valid (nullable for indeterminate cases).
+  timestamp DateTime @default(now()) // The time of the access attempt.
 }
 
-
-
+// Represents a generic log entry for system events.
 model LogEntry {
-  id        Int      @id @default(autoincrement())
-  level     String
-  message   String
-  timestamp DateTime @default(now())
+  id        Int      @id @default(autoincrement()) // Unique identifier for each log entry.
+  level     String   // The severity level of the log (e.g., "info", "warning", "error").
+  message   String   // The log message.
+  timestamp DateTime @default(now()) // The time when the log entry was created.
 }
