@@ -87,7 +87,7 @@ passport.use(new LocalStrategy(
 
 // Initialize Passport and its session management
 app.use(passport.initialize());
-app.use(passport.session());
+app.use(passport.session(undefined));
 
 /**
  * Serialize the user object to the session.
