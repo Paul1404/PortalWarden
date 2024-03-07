@@ -25,6 +25,25 @@ GPIO.setup(GREEN_LED_PIN, GPIO.OUT)
 GPIO.setup(RED_LED_PIN, GPIO.OUT)
 GPIO.output(RED_LED_PIN, GPIO.HIGH)  # Turn red LED on at script start
 
+# Setup for Servo Motor
+SERVO_PIN = 18  # Change to the GPIO pin connected to the servo
+GPIO.setup(SERVO_PIN, GPIO.OUT)
+
+
+def set_servo_angle(angle):
+    duty = angle / 18 + 2
+    servo.ChangeDutyCycle(duty)
+    time.sleep(1)  # Allow time for the servo to move
+    servo.ChangeDutyCycle(0)  # Stop sending a signal to stabilize the servo
+
+
+def lock_door():
+    set_servo_angle(0)  # Adjust angle for locked position
+
+
+def unlock_door():
+    set_servo_angle(90)  # Adjust angle for unlocked position
+
 
 # Configure logging
 def configure_logging():
@@ -93,8 +112,13 @@ class RFIDReader:
             is_valid = self.db_manager.check_validity(id)
             self.db_manager.insert_log(id, is_valid)
             if is_valid:
+                logger.info("RFID-Code valid: Unlocking Door...")
                 blink_led(GREEN_LED_PIN, duration=2)
+                unlock_door()
+                time.sleep(5)
+                lock_door()
             else:
+                logger.info("RFID Code invalid")
                 blink_led(RED_LED_PIN, duration=2)
             time.sleep(1)  # Delay between reads
 
