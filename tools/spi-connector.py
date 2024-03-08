@@ -18,6 +18,7 @@ ph = PasswordHasher()
 # Load the pin values from the .env file
 GREEN_LED_PIN = int(config('GREEN_LED_PIN', default='2'))
 RED_LED_PIN = int(config('RED_LED_PIN', default='3'))
+SERVO_PIN = int(config('SERVO_PIN', default='4')
 
 # Initialize GPIO settings
 GPIO.setmode(GPIO.BCM)
