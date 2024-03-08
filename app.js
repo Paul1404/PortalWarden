@@ -5,11 +5,13 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const Database = require('./db.js');
 const db = new Database();
+let serverProcess = null;
+
 
 const logger = createLogger(__filename);
 
 // Environment Variables
-const PYTHON_SCRIPT = process.env.PYTHON_SCRIPT || '/tools/spi-connector.py';
+const PYTHON_SCRIPT = process.env.PYTHON_SCRIPT || 'spi-connector.py';
 const SERVER_SCRIPT = process.env.SERVER_SCRIPT || 'webserver.js';
 
 /**
@@ -44,6 +46,7 @@ function startServer() {
     server.on('error', (err) => {
         logger.error(`Failed to start server: ${err}`);
     });
+    return server;
 }
 
 
@@ -113,6 +116,9 @@ function setupKeypressListener() {
  */
 async function gracefulShutdown() {
     try {
+        if (serverProcess) {
+            serverProcess.kill(); // Terminate the server process
+        }
         await db.disconnect();
         logger.info('Database connection closed.');
     } catch (error) {
@@ -164,7 +170,7 @@ async function main() {
         logger.info('Database connection established.');
 
         // Start the server and Python script
-        startServer();
+        serverProcess = startServer()
         runPythonScript();
 
         // Setup keypress and signal listeners
@@ -180,9 +186,9 @@ async function main() {
 (async () => {
     try {
         await main();
-        console.log('Application started successfully.');
+        logger.info('Application started successfully.');
     } catch (error) {
-        console.error('Failed to start the application:', error);
+        logger.error('Failed to start the application:', error);
         process.exit(1);
     }
 })();

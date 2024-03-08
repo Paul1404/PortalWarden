@@ -41,7 +41,11 @@ app.use(expressSession({
     secret: process.env.SESSION_SECRET, // Secret used to sign the session ID cookie
     resave: false, // Avoid saving session if it hasn't changed
     saveUninitialized: false, // Don't create a session until something is stored
-    cookie: { secure: true, httpOnly: true } // Enhance cookie security
+    cookie: {
+        secure: process.env.NODE_ENV === 'production', // Secure cookies in production
+        httpOnly: true, // Mitigate XSS attacks by preventing client-side script access to the cookie
+        maxAge: 86400000 //cookie expiry set to 24 hours
+    }
 }));
 
 
